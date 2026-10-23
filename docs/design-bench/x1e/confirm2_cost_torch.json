@@ -1,0 +1,15 @@
+{
+ "backend": "torch",
+ "first_s": 5.071144999994431,
+ "steady_s": [
+  4.945686299994122,
+  4.964179200003855,
+  5.019007800001418,
+  5.082529700011946,
+  5.026382299984107
+ ],
+ "median_steady_s": 5.019007800001418,
+ "nodes_per_point_mean": 119.29825,
+ "nodes_per_point_max": 1408,
+ "criterion": "<= 1 s and <= 2 GB (memory from the job cap report)"
+}

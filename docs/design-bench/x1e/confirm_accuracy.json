@@ -1,0 +1,524 @@
+{
+ "criterion": "max_rel <= 1e-4 at every counted point",
+ "worst": 0.027282119880963407,
+ "cases": {
+  "RL 0 sigma drawn": {
+   "max_rel": 2.612625488174203e-07,
+   "q_at_max": 0.03764388491729307,
+   "max_rel_within_5_sigma_of_an_edge": 2.612625488174203e-07,
+   "max_rel_all_points": 2.612625488174203e-07,
+   "reference_limited_points": 0
+  },
+  "RL 1 sigma drawn": {
+   "max_rel": 1.7859982381907002e-09,
+   "q_at_max": 0.08610497533760485,
+   "max_rel_within_5_sigma_of_an_edge": 6.257528939457302e-10,
+   "max_rel_all_points": 1.7859982381907002e-09,
+   "reference_limited_points": 0
+  },
+  "RL 2 sigma drawn": {
+   "max_rel": 6.334645030747765e-10,
+   "q_at_max": 0.5622978255844893,
+   "max_rel_within_5_sigma_of_an_edge": 2.0610191331371652e-10,
+   "max_rel_all_points": 6.334645030747765e-10,
+   "reference_limited_points": 0
+  },
+  "RL 3 sigma drawn": {
+   "max_rel": 2.7296778171148617e-09,
+   "q_at_max": 0.05947826923122835,
+   "max_rel_within_5_sigma_of_an_edge": 2.7296778171148617e-09,
+   "max_rel_all_points": 2.7296778171148617e-09,
+   "reference_limited_points": 0
+  },
+  "RL 4 sigma drawn": {
+   "max_rel": 1.0994085197779668e-06,
+   "q_at_max": 0.03924153382973049,
+   "max_rel_within_5_sigma_of_an_edge": 1.0994085197779668e-06,
+   "max_rel_all_points": 1.0994085197779668e-06,
+   "reference_limited_points": 0
+  },
+  "RL 5 sigma drawn": {
+   "max_rel": 1.5998513624992938e-09,
+   "q_at_max": 0.09888548604412961,
+   "max_rel_within_5_sigma_of_an_edge": 1.2362231238682853e-09,
+   "max_rel_all_points": 1.5998513624992938e-09,
+   "reference_limited_points": 0
+  },
+  "RL 6 sigma drawn": {
+   "max_rel": 5.411120440612649e-10,
+   "q_at_max": 0.07918210849935516,
+   "max_rel_within_5_sigma_of_an_edge": 2.553413036565644e-10,
+   "max_rel_all_points": 5.411120440612649e-10,
+   "reference_limited_points": 0
+  },
+  "RL 7 sigma drawn": {
+   "max_rel": 3.6760144928038585e-09,
+   "q_at_max": 0.09409282127574382,
+   "max_rel_within_5_sigma_of_an_edge": 1.7385407558023758e-09,
+   "max_rel_all_points": 3.6760144928038585e-09,
+   "reference_limited_points": 0
+  },
+  "RL 8 sigma drawn": {
+   "max_rel": 7.640691723764803e-08,
+   "q_at_max": 0.06693382297801113,
+   "max_rel_within_5_sigma_of_an_edge": 7.640691723764803e-08,
+   "max_rel_all_points": 7.640691723764803e-08,
+   "reference_limited_points": 0
+  },
+  "RL 9 sigma drawn": {
+   "max_rel": 7.795822876133229e-10,
+   "q_at_max": 0.0664012852040992,
+   "max_rel_within_5_sigma_of_an_edge": 4.859707081195097e-10,
+   "max_rel_all_points": 7.795822876133229e-10,
+   "reference_limited_points": 0
+  },
+  "RL 10 sigma drawn": {
+   "max_rel": 6.300752503074492e-07,
+   "q_at_max": 0.03444858282444311,
+   "max_rel_within_5_sigma_of_an_edge": 6.300752503074492e-07,
+   "max_rel_all_points": 6.300752503074492e-07,
+   "reference_limited_points": 0
+  },
+  "RL 11 sigma drawn": {
+   "max_rel": 4.440789580506532e-08,
+   "q_at_max": 0.0307207237409122,
+   "max_rel_within_5_sigma_of_an_edge": 4.440789580506532e-08,
+   "max_rel_all_points": 4.440789580506532e-08,
+   "reference_limited_points": 0
+  },
+  "RL 12 sigma drawn": {
+   "max_rel": 6.502598071111976e-08,
+   "q_at_max": 0.05575047334806912,
+   "max_rel_within_5_sigma_of_an_edge": 6.502598071111976e-08,
+   "max_rel_all_points": 6.502598071111976e-08,
+   "reference_limited_points": 0
+  },
+  "RL 13 sigma drawn": {
+   "max_rel": 2.854134595331459e-09,
+   "q_at_max": 0.09143021560453683,
+   "max_rel_within_5_sigma_of_an_edge": 2.1193848898093393e-09,
+   "max_rel_all_points": 2.854134595331459e-09,
+   "reference_limited_points": 0
+  },
+  "RL 14 sigma drawn": {
+   "max_rel": 8.611322765972318e-10,
+   "q_at_max": 0.09515786075463137,
+   "max_rel_within_5_sigma_of_an_edge": 5.128223401484888e-10,
+   "max_rel_all_points": 8.611322765972318e-10,
+   "reference_limited_points": 0
+  },
+  "RL 15 sigma drawn": {
+   "max_rel": 8.206675183863865e-08,
+   "q_at_max": 0.05042503066610242,
+   "max_rel_within_5_sigma_of_an_edge": 8.206675183863865e-08,
+   "max_rel_all_points": 8.206675183863865e-08,
+   "reference_limited_points": 0
+  },
+  "RL 0 sigma 1e-4": {
+   "max_rel": 9.17555920132429e-09,
+   "q_at_max": 0.02965561993391706,
+   "max_rel_within_5_sigma_of_an_edge": 9.17555920132429e-09,
+   "max_rel_all_points": 9.17555920132429e-09,
+   "reference_limited_points": 0
+  },
+  "RL 1 sigma 1e-4": {
+   "max_rel": 4.100971784382068e-10,
+   "q_at_max": 0.06480367019444666,
+   "max_rel_within_5_sigma_of_an_edge": 4.728439861878542e-13,
+   "max_rel_all_points": 4.100971784382068e-10,
+   "reference_limited_points": 0
+  },
+  "RL 2 sigma 1e-4": {
+   "max_rel": 7.245032351832492e-10,
+   "q_at_max": 0.07438932084520368,
+   "max_rel_within_5_sigma_of_an_edge": 3.638866985511413e-12,
+   "max_rel_all_points": 7.245032351832492e-10,
+   "reference_limited_points": 0
+  },
+  "RL 3 sigma 1e-4": {
+   "max_rel": 1.1940507471663864e-09,
+   "q_at_max": 0.061075892283509764,
+   "max_rel_within_5_sigma_of_an_edge": 2.167266366370768e-11,
+   "max_rel_all_points": 1.1940507471663864e-09,
+   "reference_limited_points": 0
+  },
+  "RL 4 sigma 1e-4": {
+   "max_rel": 2.067621185375401e-09,
+   "q_at_max": 0.03391603194884296,
+   "max_rel_within_5_sigma_of_an_edge": 2.067621185375401e-09,
+   "max_rel_all_points": 2.067621185375401e-09,
+   "reference_limited_points": 0
+  },
+  "RL 5 sigma 1e-4": {
+   "max_rel": 1.1723203519053982e-09,
+   "q_at_max": 0.07279171917541763,
+   "max_rel_within_5_sigma_of_an_edge": 1.2922996006636822e-11,
+   "max_rel_all_points": 1.1723203519053982e-09,
+   "reference_limited_points": 0
+  },
+  "RL 6 sigma 1e-4": {
+   "max_rel": 8.512068827570829e-10,
+   "q_at_max": 0.06320605270055352,
+   "max_rel_within_5_sigma_of_an_edge": 5.059286323216838e-12,
+   "max_rel_all_points": 8.512068827570829e-10,
+   "reference_limited_points": 0
+  },
+  "RL 7 sigma 1e-4": {
+   "max_rel": 1.0389070714822424e-09,
+   "q_at_max": 0.08770255137185065,
+   "max_rel_within_5_sigma_of_an_edge": 3.459721398257898e-11,
+   "max_rel_all_points": 1.0389070714822424e-09,
+   "reference_limited_points": 0
+  },
+  "RL 8 sigma 1e-4": {
+   "max_rel": 1.2123347881143332e-09,
+   "q_at_max": 0.072259184662362,
+   "max_rel_within_5_sigma_of_an_edge": 3.886668764607748e-12,
+   "max_rel_all_points": 1.2123347881143332e-09,
+   "reference_limited_points": 0
+  },
+  "RL 9 sigma 1e-4": {
+   "max_rel": 7.729532569555886e-10,
+   "q_at_max": 0.05149012099333788,
+   "max_rel_within_5_sigma_of_an_edge": 3.269284842843945e-11,
+   "max_rel_all_points": 7.729532569555886e-10,
+   "reference_limited_points": 0
+  },
+  "RL 10 sigma 1e-4": {
+   "max_rel": 2.321246483916184e-08,
+   "q_at_max": 0.031253275449264775,
+   "max_rel_within_5_sigma_of_an_edge": 2.321246483916184e-08,
+   "max_rel_all_points": 2.321246483916184e-08,
+   "reference_limited_points": 0
+  },
+  "RL 11 sigma 1e-4": {
+   "max_rel": 1.1807743560687811e-08,
+   "q_at_max": 0.0307207237409122,
+   "max_rel_within_5_sigma_of_an_edge": 1.1807743560687811e-08,
+   "max_rel_all_points": 1.1807743560687811e-08,
+   "reference_limited_points": 0
+  },
+  "RL 12 sigma 1e-4": {
+   "max_rel": 1.3821941369229762e-09,
+   "q_at_max": 0.06160843278366428,
+   "max_rel_within_5_sigma_of_an_edge": 2.443045765687657e-11,
+   "max_rel_all_points": 1.3821941369229762e-09,
+   "reference_limited_points": 0
+  },
+  "RL 13 sigma 1e-4": {
+   "max_rel": 7.737233076454686e-11,
+   "q_at_max": 0.0658687471473556,
+   "max_rel_within_5_sigma_of_an_edge": 8.993028544068693e-12,
+   "max_rel_all_points": 7.737233076454686e-11,
+   "reference_limited_points": 0
+  },
+  "RL 14 sigma 1e-4": {
+   "max_rel": 1.0511725934136962e-09,
+   "q_at_max": 0.07012904355499272,
+   "max_rel_within_5_sigma_of_an_edge": 2.244582297805664e-11,
+   "max_rel_all_points": 1.0511725934136962e-09,
+   "reference_limited_points": 0
+  },
+  "RL 15 sigma 1e-4": {
+   "max_rel": 9.702765257912915e-10,
+   "q_at_max": 0.04989248517917763,
+   "max_rel_within_5_sigma_of_an_edge": 9.702765257912915e-10,
+   "max_rel_all_points": 9.702765257912915e-10,
+   "reference_limited_points": 0
+  },
+  "RL 0 sigma 6e-3": {
+   "max_rel": 2.8600713952720014e-07,
+   "q_at_max": 0.02965561993391706,
+   "max_rel_within_5_sigma_of_an_edge": 2.8600713952720014e-07,
+   "max_rel_all_points": 2.8600713952720014e-07,
+   "reference_limited_points": 0
+  },
+  "RL 1 sigma 6e-3": {
+   "max_rel": 5.6633926437399396e-09,
+   "q_at_max": 0.09302778019372887,
+   "max_rel_within_5_sigma_of_an_edge": 2.1881754186381386e-09,
+   "max_rel_all_points": 5.6633926437399396e-09,
+   "reference_limited_points": 0
+  },
+  "RL 2 sigma 6e-3": {
+   "max_rel": 3.692068206717636e-09,
+   "q_at_max": 0.1063406739293396,
+   "max_rel_within_5_sigma_of_an_edge": 1.81078230188092e-09,
+   "max_rel_all_points": 3.692068206717636e-09,
+   "reference_limited_points": 0
+  },
+  "RL 3 sigma 6e-3": {
+   "max_rel": 5.368752553636114e-09,
+   "q_at_max": 0.09569037988723184,
+   "max_rel_within_5_sigma_of_an_edge": 2.7192871288050924e-09,
+   "max_rel_all_points": 5.368752553636114e-09,
+   "reference_limited_points": 0
+  },
+  "RL 4 sigma 6e-3": {
+   "max_rel": 1.1991431895230775e-06,
+   "q_at_max": 0.04137173002900916,
+   "max_rel_within_5_sigma_of_an_edge": 1.1991431895230775e-06,
+   "max_rel_all_points": 1.1991431895230775e-06,
+   "reference_limited_points": 0
+  },
+  "RL 5 sigma 6e-3": {
+   "max_rel": 2.653236630401068e-09,
+   "q_at_max": 0.1063406739293396,
+   "max_rel_within_5_sigma_of_an_edge": 1.3110970087382157e-09,
+   "max_rel_all_points": 2.653236630401068e-09,
+   "reference_limited_points": 0
+  },
+  "RL 6 sigma 6e-3": {
+   "max_rel": 1.851091280258288e-09,
+   "q_at_max": 0.10048303346705538,
+   "max_rel_within_5_sigma_of_an_edge": 1.0203243805406714e-09,
+   "max_rel_all_points": 1.851091280258288e-09,
+   "reference_limited_points": 0
+  },
+  "RL 7 sigma 6e-3": {
+   "max_rel": 3.9573928578562345e-09,
+   "q_at_max": 0.09569037988723184,
+   "max_rel_within_5_sigma_of_an_edge": 1.9669966766500124e-09,
+   "max_rel_all_points": 3.9573928578562345e-09,
+   "reference_limited_points": 0
+  },
+  "RL 8 sigma 6e-3": {
+   "max_rel": 5.5931584141966084e-08,
+   "q_at_max": 0.0664012852040992,
+   "max_rel_within_5_sigma_of_an_edge": 5.5931584141966084e-08,
+   "max_rel_all_points": 5.5931584141966084e-08,
+   "reference_limited_points": 0
+  },
+  "RL 9 sigma 6e-3": {
+   "max_rel": 4.651433793689819e-09,
+   "q_at_max": 0.08823507597249775,
+   "max_rel_within_5_sigma_of_an_edge": 2.273280341746897e-09,
+   "max_rel_all_points": 4.651433793689819e-09,
+   "reference_limited_points": 0
+  },
+  "RL 10 sigma 6e-3": {
+   "max_rel": 1.2071481280129248e-06,
+   "q_at_max": 0.03657878483684663,
+   "max_rel_within_5_sigma_of_an_edge": 1.2071481280129248e-06,
+   "max_rel_all_points": 1.2071481280129248e-06,
+   "reference_limited_points": 0
+  },
+  "RL 11 sigma 6e-3": {
+   "max_rel": 1.1063264659938454e-07,
+   "q_at_max": 0.034981133553311915,
+   "max_rel_within_5_sigma_of_an_edge": 1.1063264659938454e-07,
+   "max_rel_all_points": 1.1063264659938454e-07,
+   "reference_limited_points": 0
+  },
+  "RL 12 sigma 6e-3": {
+   "max_rel": 3.593897845988181e-08,
+   "q_at_max": 0.05788064389885494,
+   "max_rel_within_5_sigma_of_an_edge": 3.593897845988181e-08,
+   "max_rel_all_points": 3.593897845988181e-08,
+   "reference_limited_points": 0
+  },
+  "RL 13 sigma 6e-3": {
+   "max_rel": 4.622807248111371e-09,
+   "q_at_max": 0.09462534121671262,
+   "max_rel_within_5_sigma_of_an_edge": 2.6700458510831027e-09,
+   "max_rel_all_points": 4.622807248111371e-09,
+   "reference_limited_points": 0
+  },
+  "RL 14 sigma 6e-3": {
+   "max_rel": 1.5458921920341595e-09,
+   "q_at_max": 0.10527565237883925,
+   "max_rel_within_5_sigma_of_an_edge": 8.632466963476304e-10,
+   "max_rel_all_points": 1.5458921920341595e-09,
+   "reference_limited_points": 0
+  },
+  "RL 15 sigma 6e-3": {
+   "max_rel": 1.3743275406596922e-08,
+   "q_at_max": 0.05255521044329898,
+   "max_rel_within_5_sigma_of_an_edge": 1.3743275406596922e-08,
+   "max_rel_all_points": 1.3743275406596922e-08,
+   "reference_limited_points": 0
+  },
+  "bare Si {'sigma_q': 0.0001}": {
+   "max_rel": 1.3672565302158546e-08,
+   "q_at_max": 0.0318864774624374,
+   "max_rel_within_5_sigma_of_an_edge": 1.3672565302158546e-08,
+   "max_rel_all_points": 1.3672565302158546e-08,
+   "reference_limited_points": 0
+  },
+  "bare Si {'sigma_q': 0.0005}": {
+   "max_rel": 9.802850164941646e-08,
+   "q_at_max": 0.03252086811352254,
+   "max_rel_within_5_sigma_of_an_edge": 9.802850164941646e-08,
+   "max_rel_all_points": 9.802850164941646e-08,
+   "reference_limited_points": 0
+  },
+  "bare Si {'sigma_q': 0.002}": {
+   "max_rel": 3.46652833549399e-07,
+   "q_at_max": 0.033789649415692825,
+   "max_rel_within_5_sigma_of_an_edge": 3.46652833549399e-07,
+   "max_rel_all_points": 3.46652833549399e-07,
+   "reference_limited_points": 0
+  },
+  "bare Si {'dq_over_q': 0.02}": {
+   "max_rel": 1.2156553819142601e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 1.2156553819142601e-07,
+   "max_rel_all_points": 1.2156553819142601e-07,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'sigma_q': 0.0001}": {
+   "max_rel": 2.5437411288464773e-08,
+   "q_at_max": 0.0318864774624374,
+   "max_rel_within_5_sigma_of_an_edge": 2.5437411288464773e-08,
+   "max_rel_all_points": 2.5437411288464773e-08,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'sigma_q': 0.0005}": {
+   "max_rel": 1.7655786688219877e-07,
+   "q_at_max": 0.03252086811352254,
+   "max_rel_within_5_sigma_of_an_edge": 1.7655786688219877e-07,
+   "max_rel_all_points": 1.7655786688219877e-07,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'sigma_q': 0.002}": {
+   "max_rel": 6.39932772661389e-07,
+   "q_at_max": 0.033789649415692825,
+   "max_rel_within_5_sigma_of_an_edge": 6.39932772661389e-07,
+   "max_rel_all_points": 6.39932772661389e-07,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'dq_over_q': 0.02}": {
+   "max_rel": 2.127744883617666e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 2.127744883617666e-07,
+   "max_rel_all_points": 2.127744883617666e-07,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'sigma_q': 0.0001}": {
+   "max_rel": 1.1593365401019184e-07,
+   "q_at_max": 0.056627712854757935,
+   "max_rel_within_5_sigma_of_an_edge": 1.1593365401019184e-07,
+   "max_rel_all_points": 1.1593365401019184e-07,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'sigma_q': 0.0005}": {
+   "max_rel": 7.197677799331004e-07,
+   "q_at_max": 0.05631051752921536,
+   "max_rel_within_5_sigma_of_an_edge": 7.197677799331004e-07,
+   "max_rel_all_points": 7.197677799331004e-07,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'sigma_q': 0.002}": {
+   "max_rel": 2.36884635884671e-06,
+   "q_at_max": 0.05631051752921536,
+   "max_rel_within_5_sigma_of_an_edge": 2.36884635884671e-06,
+   "max_rel_all_points": 2.36884635884671e-06,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'dq_over_q': 0.02}": {
+   "max_rel": 8.882996374026675e-07,
+   "q_at_max": 0.056627712854757935,
+   "max_rel_within_5_sigma_of_an_edge": 8.882996374026675e-07,
+   "max_rel_all_points": 8.882996374026675e-07,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'sigma_q': 0.0001}": {
+   "max_rel": 2.1881705336568302e-08,
+   "q_at_max": 0.031569282136894826,
+   "max_rel_within_5_sigma_of_an_edge": 2.1881705336568302e-08,
+   "max_rel_all_points": 2.1881705336568302e-08,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'sigma_q': 0.0005}": {
+   "max_rel": 3.2190380605534585e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 3.2190380605534585e-07,
+   "max_rel_all_points": 3.2190380605534585e-07,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'sigma_q': 0.002}": {
+   "max_rel": 7.427701457229929e-07,
+   "q_at_max": 0.033472454090150254,
+   "max_rel_within_5_sigma_of_an_edge": 7.427701457229929e-07,
+   "max_rel_all_points": 7.427701457229929e-07,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'dq_over_q': 0.02}": {
+   "max_rel": 4.274437237494766e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 4.274437237494766e-07,
+   "max_rel_all_points": 4.274437237494766e-07,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'sigma_q': 0.0001}": {
+   "max_rel": 5.171501979983617e-07,
+   "q_at_max": 0.047746243739565944,
+   "max_rel_within_5_sigma_of_an_edge": 4.036015965880324e-11,
+   "max_rel_all_points": 5.171501979983617e-07,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'sigma_q': 0.0005}": {
+   "max_rel": 0.027282119880963407,
+   "q_at_max": 0.047746243739565944,
+   "max_rel_within_5_sigma_of_an_edge": 1.84933079960814e-08,
+   "max_rel_all_points": 0.027282119880963407,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'sigma_q': 0.002}": {
+   "max_rel": 0.0009737595953958067,
+   "q_at_max": 0.048063439065108515,
+   "max_rel_within_5_sigma_of_an_edge": 0.0009737595953958067,
+   "max_rel_all_points": 0.0009737595953958067,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'dq_over_q': 0.02}": {
+   "max_rel": 0.012632098673673209,
+   "q_at_max": 0.047746243739565944,
+   "max_rel_within_5_sigma_of_an_edge": 0.01259564030672844,
+   "max_rel_all_points": 0.012632098673673209,
+   "reference_limited_points": 0
+  },
+  "45+1.5i 2000 A": {
+   "max_rel": 1.4305989726182133e-10,
+   "q_at_max": 0.053417085427135684,
+   "max_rel_within_5_sigma_of_an_edge": 1.2058987142182787e-10,
+   "max_rel_all_points": 1.4305989726182133e-10,
+   "reference_limited_points": 0
+  },
+  "45+1.5i 4000 A": {
+   "max_rel": 4.2605186045818755e-10,
+   "q_at_max": 0.05977386934673368,
+   "max_rel_within_5_sigma_of_an_edge": 3.440966400702905e-10,
+   "max_rel_all_points": 4.2605186045818755e-10,
+   "reference_limited_points": 0
+  },
+  "45+1.5i 1000 A dq/q": {
+   "max_rel": 1.5570189582092553e-10,
+   "q_at_max": 0.0542462311557789,
+   "max_rel_within_5_sigma_of_an_edge": 1.2980605479384622e-10,
+   "max_rel_all_points": 1.5570189582092553e-10,
+   "reference_limited_points": 0
+  },
+  "PS-like 9.6+0.012i": {
+   "max_rel": 1.0729779287288466e-09,
+   "q_at_max": 0.09984274544813025,
+   "max_rel_within_5_sigma_of_an_edge": 9.365852537968067e-11,
+   "max_rel_all_points": 1.0729779287288466e-09,
+   "reference_limited_points": 0
+  },
+  "45+0.05i 1000 A": {
+   "max_rel": 1.2452879838420472e-09,
+   "q_at_max": 0.4173523171289079,
+   "max_rel_within_5_sigma_of_an_edge": 5.782641032681113e-11,
+   "max_rel_all_points": 1.2452879838420472e-09,
+   "reference_limited_points": 0
+  },
+  "Ni/C/Ni waveguide": {
+   "max_rel": 5.4212856204216564e-08,
+   "q_at_max": 0.030753768844221107,
+   "max_rel_within_5_sigma_of_an_edge": 2.6145248188669257e-09,
+   "max_rel_all_points": 5.4212856204216564e-08,
+   "reference_limited_points": 0
+  }
+ }
+}

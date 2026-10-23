@@ -6,6 +6,7 @@ ratio) times the footprint factor at that angle. The weighted sum over nodes is 
 background is added (DESIGN.md section 2). Every instrument field may be a scalar or a (B,) array, one value per curve.
 """
 
+import warnings
 from dataclasses import dataclass, fields
 from typing import Any
 
@@ -14,7 +15,7 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.special import erf
 
 from reflectofit import resolution
-from reflectofit.kernel import parratt
+from reflectofit.kernel import parratt, smear
 from reflectofit.structure import as_batch
 from reflectofit.units import CU_KALPHA1, CU_KALPHA2
 
@@ -100,6 +101,8 @@ def _active(x) -> bool:
 
 ROWS_PER_BLOCK = 256
 """Curves per block of the resolution integral (bounds the flat node arrays)."""
+NODES_PER_CALL = 2_000_000
+"""Padded resolution nodes per kernel call (bounds the memory of a block)."""
 
 
 def _at_angles(ops, kernel, x, packed, inst: Instrument):
@@ -125,23 +128,70 @@ def _point_smear(ops, kernel, q_true, sigma, packed, inst: Instrument):
     all nodes of a curve in one flat list, one kernel call, summed back per point."""
     b, nq = q_true.shape[0], q_true.shape[1]
     qt, sg = _numpy(q_true)[..., 0], _numpy(sigma)[..., 0]
-    sld, thickness = _numpy(packed[0]), _numpy(packed[1])
-    ka2 = inst.kalpha2_wavelength / inst.wavelength if _active(inst.kalpha2_ratio) else None
-    layouts = []
-    for i in range(b):
-        qc, width = resolution.edges(sld[i], ka2)
-        counts = resolution.point_nodes(qt[i], sg[i], float(thickness[i, 1:-1].sum()), qc, width)
-        layouts.append(resolution.layout(counts))
-    m = max(o.size for o, _, _ in layouts)
-    # padding nodes sit on point 0 with weight 0, so a curve's result does not depend on its batch
-    owner = np.stack([np.pad(o, (0, m - o.size)) for o, _, _ in layouts])
-    u = np.stack([np.pad(x, (0, m - x.size)) for _, x, _ in layouts])
-    w = np.stack([np.pad(x, (0, m - x.size)) for _, _, x in layouts])
-    nodes = ops.take_rows(q_true[..., 0], owner) + ops.take_rows(
-        sigma[..., 0], owner
-    ) * ops.asarray(u)
-    r = _at_angles(ops, kernel, nodes, packed, inst)
-    return ops.sum_rows(r * ops.asarray(w), owner, nq)
+    ka2 = _active(inst.kalpha2_ratio)
+    counts, u_all, w_all, err, capped = resolution.layout(
+        qt, sg, tuple(_numpy(a) for a in packed), inst.wavelength,
+        inst.kalpha2_wavelength if ka2 else None,
+    )  # fmt: skip
+    loose = capped | (err > resolution.REFINE_TOL)
+    if loose.any():
+        warnings.warn(
+            f"resolution: {int(loose.sum())} points above the refinement tolerance "
+            f"({int(capped.sum())} stopped at MAX_DEPTH); estimated relative error up to "
+            f"{err[loose].max():.1e} (resolution_report gives it per point)",
+            RuntimeWarning,
+            stacklevel=4,
+        )
+    if ops is _NumpyOps:
+        # one fused numba loop over the points and their nodes (no padding, no temporaries)
+        footprint = inst.sample_length is not None and inst.beam_sigma is not None
+        nan = np.full(b, np.nan)
+        return smear(
+            qt,
+            sg,
+            counts,
+            u_all,
+            w_all,
+            *packed,
+            inst.wavelength,
+            inst.kalpha2_wavelength if ka2 else 0.0,
+            ops.column(inst.kalpha2_ratio, b).ravel(),
+            ops.column(inst.sample_length, b).ravel() if footprint else nan,
+            ops.column(inst.beam_sigma, b).ravel() if footprint else nan,
+        )
+    # per curve: owner point of each node, its u and weight
+    ends = np.cumsum(counts.reshape(b, nq).sum(axis=1))
+    layouts = [
+        (np.repeat(np.arange(nq), c), x, y)
+        for c, x, y in zip(
+            counts.reshape(b, nq),
+            np.split(u_all, ends[:-1]),
+            np.split(w_all, ends[:-1]),
+            strict=True,
+        )
+    ]
+    sizes = [o.size for o, _, _ in layouts]
+    out = []
+    start = 0
+    while start < b:
+        # curves in one kernel call while the padded node array stays within NODES_PER_CALL
+        stop, m = start + 1, sizes[start]
+        while stop < b and max(m, sizes[stop]) * (stop + 1 - start) <= NODES_PER_CALL:
+            m = max(m, sizes[stop])
+            stop += 1
+        rows = slice(start, stop)
+        part = layouts[rows]
+        # padding nodes sit on point 0 with weight 0, so a curve's result does not depend on its batch
+        owner = np.stack([np.pad(o, (0, m - o.size)) for o, _, _ in part])
+        u = np.stack([np.pad(x, (0, m - x.size)) for _, x, _ in part])
+        w = np.stack([np.pad(x, (0, m - x.size)) for _, _, x in part])
+        nodes = ops.take_rows(q_true[rows, :, 0], owner) + ops.take_rows(
+            sigma[rows, :, 0], owner
+        ) * ops.asarray(u)
+        r = _at_angles(ops, kernel, nodes, tuple(a[rows] for a in packed), _rows(inst, rows, b))
+        out.append(ops.sum_rows(r * ops.asarray(w), owner, nq))
+        start = stop
+    return ops.cat(out) if len(out) > 1 else out[0]
 
 
 def _observed(ops, kernel, q, b, packed, inst: Instrument):
@@ -218,3 +268,38 @@ def forward(
     else:
         r = _observed(_NumpyOps, parratt, q, b, packed, instrument)
     return r[0] if single else r
+
+
+def resolution_report(q: ArrayLike, model, instrument: Instrument) -> dict[str, NDArray]:
+    """For the default resolution rule: nodes per point, the estimated relative error of the refined
+    range between the critical q, and whether refinement stopped at `resolution.MAX_DEPTH`, each
+    (B, Q) (or (Q,) for one model). What `forward` integrates with, without evaluating the curve."""
+    packed, single = as_batch(model)
+    q = np.asarray(q, dtype=float)
+    b = packed[0].shape[0]
+    inst = instrument
+    wl1 = inst.wavelength
+
+    def col(v):
+        return np.broadcast_to(np.asarray(v, dtype=float), (b,))[:, None]
+
+    theta = np.degrees(np.arcsin(np.clip(q * wl1 / (4.0 * np.pi), 0.0, 1.0)))[None, :]
+    theta = np.clip(theta + 0.5 * col(inst.tth_offset), 1e-9, 0.5 * MAX_TTH)
+    q_true = 4.0 * np.pi / wl1 * np.sin(np.radians(theta))
+    sigma = np.sqrt(
+        np.clip(col(inst.sigma_q) ** 2 + (col(inst.dq_over_q) * q_true) ** 2, 1e-300, None)
+    )
+    ka2 = _active(inst.kalpha2_ratio)
+    counts, _, _, err, capped = resolution.layout(
+        q_true,
+        sigma,
+        packed,
+        wl1,
+        inst.kalpha2_wavelength if ka2 else None,
+    )
+    out = {
+        "nodes": counts.reshape(b, -1),
+        "error": err.reshape(b, -1),
+        "capped": capped.reshape(b, -1),
+    }
+    return {k: v[0] for k, v in out.items()} if single else out

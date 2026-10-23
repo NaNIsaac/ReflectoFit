@@ -44,7 +44,7 @@ CASES = {
         0.0,
     ),
     # the final review (ReflectoFit#4): resonances between the edges are narrower than one edge
-    # width, and a real-SLD substrate sets the narrowest width to EDGE_FLOOR
+    # width; on a real-SLD substrate the edge is a bare square-root kink (ReflectoFit#6)
     "Ni/C/Ni waveguide, sigma 1e-4": (
         Stack([Layer(NI, 100, 2), Layer(18 + 0.02j, 800, 2)], Layer(NI, roughness=2)),
         1e-4,
@@ -67,15 +67,18 @@ def test_default_resolution_rule_converges(name):
 
 
 @pytest.mark.parametrize(
-    ("name", "constant", "loose"),
+    ("name", "loose"),
     [
-        ("Ni/C/Ni waveguide, sigma 1e-4", "RESONANCE", 2.0),
-        ("PS-like on real Si, sigma 1e-4", "EDGE_FLOOR", 1e-5),
+        # since the refinement between the edges (ReflectoFit#6) a loose RESONANCE alone is
+        # caught by it, so the refinement goes too
+        ("Ni/C/Ni waveguide, sigma 1e-4", {"RESONANCE": 2.0, "REFINE_TOL": np.inf}),
+        ("PS-like on real Si, sigma 1e-4", {"SPLIT_AT_EDGES": False}),
     ],
 )
-def test_the_waveguide_cases_fail_with_a_looser_constant(monkeypatch, name, constant, loose):
+def test_the_waveguide_cases_fail_with_a_looser_constant(monkeypatch, name, loose):
     stack, sigma_q, _ = CASES[name]
-    monkeypatch.setattr(resolution, constant, loose)
+    for constant, value in loose.items():
+        monkeypatch.setattr(resolution, constant, value)
     got = forward(Q, stack, Instrument(sigma_q=sigma_q))
     assert np.abs(got / _brute(Q, stack, sigma_q) - 1).max() > 1e-5
 
