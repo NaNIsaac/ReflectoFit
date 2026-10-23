@@ -71,5 +71,9 @@ def check_packed(sld: NDArray, thickness: NDArray, roughness: NDArray) -> None:
         raise ValueError("a stack needs at least the ambient and the substrate")
     if np.any(sld.imag < 0):
         raise ValueError("negative imaginary SLD is gain; absorption is Im SLD > 0")
+    if np.any(sld[:, 0].imag != 0):
+        # the kernel works with SLD relative to the ambient; an absorbing ambient makes every less
+        # absorbing medium a gain medium (R > 1). XRR ambients are air or vacuum.
+        raise ValueError("the ambient must not absorb (Im SLD of the ambient must be 0)")
     if np.any(thickness < 0) or np.any(roughness < 0):
         raise ValueError("thickness and roughness must be non-negative")

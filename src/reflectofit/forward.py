@@ -1,11 +1,12 @@
 """Observed reflectivity: the layer kernel plus the instrument.
 
-For each quadrature node of the Gaussian resolution in q: the nominal 2θ plus the alignment offset
-gives the true angle; R at that angle for Kα₁ (and Kα₂, mixed by intensity ratio) times the footprint
-factor at that angle. The weighted sum over nodes is scaled by I0 and the background is added
-(DESIGN.md section 2). Every instrument field may be a scalar or a (B,) array, one value per curve.
+The nominal 2θ plus the alignment offset is the true angle; the resolution is a Gaussian in q around
+the q of that angle. At each quadrature node: R for Kα₁ (and Kα₂ at the same angle, mixed by intensity
+ratio) times the footprint factor at that angle. The weighted sum over nodes is scaled by I0 and the
+background is added (DESIGN.md section 2). Every instrument field may be a scalar or a (B,) array, one value per curve.
 """
 
+import warnings
 from dataclasses import dataclass, fields
 from typing import Any
 
@@ -39,8 +40,9 @@ class Instrument:
     """Sample length along the beam [mm]; with beam_sigma enables the footprint factor."""
     beam_sigma: Any = None
     """Gaussian σ of the beam profile at the sample [mm] (FWHM / 2.3548), beam centred."""
-    nodes: int = 17
-    """Gauss-Hermite nodes for the resolution integral."""
+    nodes: int | None = None
+    """Nodes of the resolution integral; None chooses them from the resolution width and the stack's
+    total thickness (`resolution_nodes`)."""
 
     def replace(self, **changes) -> "Instrument":
         values = {f.name: getattr(self, f.name) for f in fields(self)}
@@ -60,25 +62,86 @@ class _NumpyOps:
         return np.broadcast_to(np.asarray(x, dtype=float), (b,)).reshape(b, 1, 1)
 
 
+def _active(x) -> bool:
+    """Whether an instrument term is switched on. A tensor counts as on: its value may be traced
+    (torch.func.jacfwd, vmap), so no branch may depend on it."""
+    if x is None:
+        return False
+    if hasattr(x, "detach"):
+        return True
+    return bool(np.any(np.asarray(x) != 0))
+
+
+NODE_SPAN = 6.5
+"""The resolution integral runs over ±NODE_SPAN standard deviations."""
+NODE_DQ = 3e-4
+"""Largest node spacing in q [Å⁻¹]; resolves the square-root kink of R at a critical edge."""
+MAX_NODES = 401
+
+
+def resolution_nodes(sigma_max: float, thickness: float) -> int:
+    """Node count of the uniform (Gaussian-weighted trapezoid) resolution rule.
+
+    Spacing h, in units of σ, is the smallest of 0.5, NODE_DQ / σ and 2π / (2 σ T + 8): the last
+    keeps the rule exact for fringes of a film of total thickness T up to well past the point where
+    the resolution damps them. Against a brute-force convolution this stays within 1e-8 relative for
+    σ up to 2e-3 Å⁻¹ and T up to 4000 Å (physics review on ReflectoFit#2). Above MAX_NODES the count
+    is capped with a warning.
+    """
+    if sigma_max <= 0:
+        return 1
+    h = min(0.5, NODE_DQ / sigma_max, 2 * np.pi / (2 * sigma_max * thickness + 8))
+    n = 2 * int(np.ceil(NODE_SPAN / h)) + 1
+    if n > MAX_NODES:
+        warnings.warn(
+            f"resolution needs {n} nodes (σ_q up to {sigma_max:.2g} Å⁻¹, thickness {thickness:.0f} Å);"
+            f" capped at {MAX_NODES}, the smeared curve may be inaccurate",
+            stacklevel=3,
+        )
+        n = MAX_NODES
+    return n
+
+
+def _value(x) -> float:
+    if hasattr(x, "detach"):
+        x = x.detach()
+    return float(x.max()) if hasattr(x, "max") else float(x)
+
+
 def _observed(ops, kernel, q, b, packed, inst: Instrument):
-    """Shared pipeline. q (Q,) nominal; returns (B, Q)."""
+    """Shared pipeline. q (Q,) nominal; returns (B, Q).
+
+    The offset comes first: the true angle is the nominal 2θ plus the offset, and the resolution
+    is a Gaussian in q around the q of that true angle. Each quadrature node is an angle at which
+    Kα₁, Kα₂ and the footprint are evaluated.
+    """
     q = q.reshape(1, -1, 1)
-    sigma2 = ops.column(inst.sigma_q, b) ** 2 + (ops.column(inst.dq_over_q, b) * q) ** 2
-    if inst.nodes > 1 and bool((sigma2 > 0).any()):
-        x, w = np.polynomial.hermite.hermgauss(inst.nodes)
-        nodes = q + np.sqrt(2.0) * ops.sqrt(sigma2) * ops.asarray(x).reshape(1, 1, -1)
-        weights = ops.asarray(w / np.sqrt(np.pi)).reshape(1, 1, -1)
-    else:
-        nodes = q + 0.0 * sigma2
-        weights = None
     wl1 = inst.wavelength
-    s1 = ops.clip(nodes * (wl1 / (4.0 * np.pi)), 0.0, 1.0)
-    theta_deg = ops.arcsin(s1) * (180.0 / np.pi) + 0.5 * ops.column(inst.tth_offset, b)
-    theta = ops.clip(theta_deg, 1e-9, 0.5 * MAX_TTH) * (np.pi / 180.0)
-    sin_t = ops.sin(theta)
+    to_deg = 180.0 / np.pi
+    theta = ops.arcsin(ops.clip(q * (wl1 / (4.0 * np.pi)), 0.0, 1.0)) * to_deg
+    theta = ops.clip(theta + 0.5 * ops.column(inst.tth_offset, b), 1e-9, 0.5 * MAX_TTH)
+    q_true = (4.0 * np.pi / wl1) * ops.sin(theta / to_deg)
+    if inst.nodes != 1 and (_active(inst.sigma_q) or _active(inst.dq_over_q)):
+        sigma2 = ops.column(inst.sigma_q, b) ** 2 + (ops.column(inst.dq_over_q, b) * q_true) ** 2
+        n = inst.nodes
+        if n is None:
+            # node count from values: fine under jacfwd; under vmap over the resolution pass nodes
+            total = _value(packed[1].sum(-1))
+            n = resolution_nodes(_value(sigma2) ** 0.5, total)
+        u = np.linspace(-NODE_SPAN, NODE_SPAN, n)
+        w = np.exp(-0.5 * u**2)
+        # the floor keeps d sqrt / d sigma finite (zero) for a curve without resolution
+        sigma = ops.sqrt(ops.clip(sigma2, 1e-300, None))
+        nodes = q_true + sigma * ops.asarray(u).reshape(1, 1, -1)
+        weights = ops.asarray(w / w.sum()).reshape(1, 1, -1)
+    else:
+        nodes = q_true
+        weights = None
+    # a node below q = 0 is the mirror image of a grazing angle; keep it at grazing incidence
+    sin_t = ops.clip(nodes * (wl1 / (4.0 * np.pi)), 1e-12, 1.0)
     shape = sin_t.shape
     r = kernel((4.0 * np.pi / wl1) * sin_t.reshape(b, -1), *packed).reshape(shape)
-    if inst.kalpha2_ratio is not None and bool(np.any(np.asarray(_detach(inst.kalpha2_ratio)) > 0)):
+    if _active(inst.kalpha2_ratio):
         a = ops.column(inst.kalpha2_ratio, b)
         r2 = kernel((4.0 * np.pi / inst.kalpha2_wavelength) * sin_t.reshape(b, -1), *packed)
         r = (r + a * r2.reshape(shape)) / (1.0 + a)
@@ -91,10 +154,6 @@ def _observed(ops, kernel, q, b, packed, inst: Instrument):
         r = r * ops.erf(arg)
     r = (r * weights).sum(-1) if weights is not None else r[..., 0]
     return ops.column(inst.i0, b)[..., 0] * r + ops.column(inst.background, b)[..., 0]
-
-
-def _detach(x):
-    return x.detach().cpu().numpy() if hasattr(x, "detach") else x
 
 
 def forward(

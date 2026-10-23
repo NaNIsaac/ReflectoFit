@@ -49,19 +49,13 @@ def test_footprint_is_the_centred_gaussian_beam_factor():
 @pytest.mark.parametrize(("sigma_q", "dq_over_q"), [(1e-3, 0.0), (0.0, 0.02), (5e-4, 0.01)])
 def test_resolution_matches_a_brute_force_convolution(sigma_q, dq_over_q):
     q = tth_to_q(np.linspace(0.6, 4.0, 40))
-    got = forward(q, STACK, Instrument(sigma_q=sigma_q, dq_over_q=dq_over_q, nodes=41))
+    got = forward(q, STACK, Instrument(sigma_q=sigma_q, dq_over_q=dq_over_q))
     sigma = np.sqrt(sigma_q**2 + (dq_over_q * q) ** 2)
     u = np.linspace(-8, 8, 4001)
     nodes = q[:, None] + sigma[:, None] * u[None, :]
     weights = np.exp(-0.5 * u**2)
     brute = (forward(nodes.ravel(), STACK).reshape(nodes.shape) * weights).sum(1) / weights.sum()
     np.testing.assert_allclose(got, brute, rtol=1e-6)
-
-
-def test_default_nodes_are_close_to_converged():
-    q = tth_to_q(np.linspace(0.6, 4.0, 40))
-    fine = forward(q, STACK, Instrument(dq_over_q=0.02, nodes=41))
-    np.testing.assert_allclose(forward(q, STACK, Instrument(dq_over_q=0.02)), fine, rtol=1e-3)
 
 
 def test_per_curve_instrument_values():

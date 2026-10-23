@@ -62,8 +62,6 @@ def _to_tensors(model, dtype, device):
         single = sld.ndim == 1
         if single:
             sld, thickness, roughness = sld[None], thickness[None], roughness[None]
-        if bool((sld.imag < 0).any()):
-            raise ValueError("negative imaginary SLD is gain; absorption is Im SLD > 0")
         return (sld, thickness.to(dtype), roughness.to(dtype)), single
     if not isinstance(model, Stack | tuple | list):
         raise TypeError("model must be a Stack, a packed tuple or a sequence of them")
@@ -79,7 +77,9 @@ def _to_tensors(model, dtype, device):
 def forward(q, model, instrument: Instrument | None = None, chunk: int = CHUNK) -> Tensor:
     """Observed reflectivity as a differentiable tensor; arguments as `reflectofit.forward`.
 
-    Parameters given as tensors (packed tuple, instrument fields) keep their graph.
+    Parameters given as tensors (packed tuple, instrument fields) keep their graph and work under
+    torch.func transforms; for tensors no value is checked (Im SLD >= 0 is the caller's to keep),
+    and a tensor instrument field always counts as switched on.
     """
     q = torch.as_tensor(q) if isinstance(q, Tensor) else torch.as_tensor(np.asarray(q, float))
     dtype = q.dtype if q.dtype in (torch.float32, torch.float64) else torch.float64

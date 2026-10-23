@@ -30,6 +30,9 @@ class FitResult:
     message: str
     nfev: int
     method: str
+    njev: int = 0
+    status: int | None = None
+    """scipy's status: for lsq 0 means the evaluation budget ran out."""
     settings: dict = field(default_factory=dict)
     covariance: NDArray | None = None
     at_bound: list[str] = field(default_factory=list)
@@ -151,7 +154,7 @@ def lsq(
         fun, x0, jac=jac, bounds=(lo, hi), method="trf", x_scale="jac", max_nfev=max_nfev
     )
     settings = {"trust": trust, "max_nfev": max_nfev, "counts_scale": counts_scale}
-    return _result(
+    out = _result(
         model,
         res.x,
         res.fun,
@@ -165,6 +168,8 @@ def lsq(
         settings,
         (lo, hi),
     )
+    out.njev, out.status = int(res.njev or 0), int(res.status)
+    return out
 
 
 def de(

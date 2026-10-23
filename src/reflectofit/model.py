@@ -127,6 +127,19 @@ class Model:
         substrate = Layer(complex(sld[-1]), 0.0, float(roughness[-1]), sub.name)
         return Model(Stack(layers, substrate, self.stack.ambient), inst, dict(self.free))
 
+    def select(self, names) -> "Model":
+        """The same model with only `names` free (others held at their current values); `names`
+        is a sequence of parameter names or a boolean mask over `self.names`."""
+        names = list(names)
+        if names and isinstance(names[0], (bool, np.bool_)):
+            if len(names) != len(self.free):
+                raise ValueError(f"mask of length {len(names)} for {len(self.free)} parameters")
+            names = [k for k, keep in zip(self.free, names, strict=True) if keep]
+        unknown = [k for k in names if k not in self.free]
+        if unknown:
+            raise ValueError(f"not free in this model: {unknown}")
+        return Model(self.stack, self.instrument, {k: self.free[k] for k in names})
+
     def _inst_keys(self) -> list[str]:
         keys = [k for k in self.free if k in INSTRUMENT_FIELDS]
         return [*keys, "background"] if "log10_background" in self.free else keys

@@ -38,8 +38,7 @@ def residuals(kind: str, lam, y, scale: float = 1.0, sigma=None, floor: float = 
         case "raw":
             return (lam - y) / scale
         case "poisson":
-            d = _deviance_terms(lam, y)
-            return xp.sign(lam - y) * xp.sqrt(_clamp_min(d, 0.0))
+            return _poisson_residuals(xp, lam, y)
         case "chi2":
             if sigma is None:
                 raise ValueError("chi2 residuals need sigma")
@@ -53,6 +52,19 @@ def loss(kind: str, lam, y, scale: float = 1.0, sigma=None, mask=None, floor: fl
     if mask is not None:
         r2 = r2 * mask
     return r2.sum(-1)
+
+
+def _poisson_residuals(xp, lam, y):
+    """sign(lam - y) sqrt(d) written as (lam - y) g with g = sqrt(d) / |lam - y|, which tends to
+    1 / sqrt(y) at lam = y. The plain form has a 0/0 derivative there (NaN under autograd); this
+    one has the right limit, 1 / sqrt(lam), for d residual / d lam."""
+    diff = lam - y
+    near = abs(diff) <= 1e-6 * _clamp_min(y, 1e-12)
+    safe = xp.where(near, xp.ones_like(diff), diff)
+    # both branches of a where are differentiated, so neither may hold a sqrt(0) or a 0 / 0
+    d = xp.where(near, xp.ones_like(diff), _clamp_min(_deviance_terms(lam, y), 0.0))
+    g = xp.where(near, 1.0 / xp.sqrt(_clamp_min(lam, 1e-300)), xp.sqrt(d) / abs(safe))
+    return diff * g
 
 
 def _deviance_terms(lam, y):

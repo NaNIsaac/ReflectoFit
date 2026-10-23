@@ -105,8 +105,10 @@ def test_matches_jax(name):
 
 @pytest.mark.parametrize("im", [1e-12, 1e-6, 0.46])
 def test_square_root_branches(im):
-    """Both branches of the complex square root at small absorption: the plateau (Re k² < 0) and
-    the tail (Re k² > 0). Fresnel reflectivity of a bare substrate against the closed form."""
+    """float64 accuracy near Re k² = 0 at small absorption, on the plateau and in the tail. The
+    closed form uses the same conjugate and principal root, and |r| of a bare substrate does not
+    depend on the sign convention, so this does not test the branch or the absorption sign; those
+    are pinned by the refnx and ReflectoLearn comparisons with absorbing layers above."""
     sub = 20.07 + im * 1j
     q = np.concatenate([np.linspace(0.005, 0.03, 50), np.linspace(0.04, 1.0, 50)])
     k0 = q / 2
