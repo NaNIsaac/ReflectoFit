@@ -106,7 +106,7 @@ def forward(
     sequence of either. Without an instrument this is the bare |r|² of the stack.
     """
     if backend == "torch":
-        from reflectofit.backends.torch import forward as torch_forward
+        from reflectofit.torch_backend import forward as torch_forward
 
         return torch_forward(q, model, instrument)
     if backend != "numba":
