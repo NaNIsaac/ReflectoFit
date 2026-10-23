@@ -21,13 +21,20 @@ import math
 import numpy as np
 import pytest
 
-torch = pytest.importorskip("torch")
+from reflectofit import Instrument, Layer, Stack, forward, tth_to_q
+from reflectofit.data import Curve
+from reflectofit.fit import staged as fit_staged
+from reflectofit.model import Model
 
-from reflectofit import Instrument, Layer, Stack, forward, tth_to_q  # noqa: E402
-from reflectofit.data import Curve  # noqa: E402
-from reflectofit.fit import staged as fit_staged  # noqa: E402
-from reflectofit.model import Model  # noqa: E402
-from reflectofit.staged import LOSSES, Param, Stage, StagedFit, loss_fn  # noqa: E402
+torch = pytest.importorskip("torch")
+staged = pytest.importorskip("reflectofit.staged")
+LOSSES, Param, Stage, StagedFit, loss_fn = (
+    staged.LOSSES,
+    staged.Param,
+    staged.Stage,
+    staged.StagedFit,
+    staged.loss_fn,
+)
 
 Q = tth_to_q(np.linspace(0.2, 6.0, 300))
 SI = 20.07 + 0.46j
