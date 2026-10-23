@@ -317,6 +317,32 @@ class MCMCResult:
     settings: dict = field(default_factory=dict)
 
 
+def _ensemble(log_prob, z0, steps, max_steps, seed, to_params=None):
+    """Run emcee's DEMove ensemble from z0 (walkers, ndim): `steps`, then doubled while the kept half
+    (the first half discarded) is shorter than TAU_FACTOR times the largest integrated
+    autocorrelation time, up to `max_steps`. Returns the kept chain (steps, walkers, ndim) mapped by
+    `to_params`, its τ per coordinate, the total steps and the sampler."""
+    import emcee
+
+    walkers, ndim = z0.shape
+    sampler = emcee.EnsembleSampler(
+        walkers, ndim, log_prob, vectorize=True, moves=[(emcee.moves.DEMove(), 1.0)]
+    )
+    sampler.random_state = np.random.RandomState(seed).get_state()
+    state = sampler.run_mcmc(z0, steps, progress=False)
+    total = steps
+    while True:
+        chain = sampler.get_chain(discard=total // 2)
+        if to_params is not None:
+            chain = to_params(chain)
+        tau = emcee.autocorr.integrated_time(chain, quiet=True)
+        if (total - total // 2) / np.max(tau) >= TAU_FACTOR or total >= max_steps:
+            return chain, tau, total, sampler
+        more = min(total, max_steps - total)
+        state = sampler.run_mcmc(state, more, progress=False)
+        total += more
+
+
 def mcmc(
     model: Model,
     curve: Curve,
@@ -332,20 +358,21 @@ def mcmc(
 ) -> MCMCResult:
     """Posterior sampling with emcee (extra `mcmc`), flat priors within the model's bounds.
 
-    Coordinates are whitened by the start fit's covariance (θ = θ_start + L z, L its Cholesky
-    factor), and the walkers move by differential evolution (0.8 DEMove, 0.2 DESnookerMove), which
-    mixes in correlated posteriors where the stretch move does not (ReflectoLearn#29, R2c). The
-    first half of the chain is discarded. While the kept half is shorter than TAU_FACTOR times the
-    largest integrated autocorrelation time, the chain is extended, up to `max_steps`; if it is still
-    short, `converged` is False and a RuntimeWarning says so.
+    The walkers move by differential evolution (emcee's DEMove), which mixed in correlated
+    posteriors where the stretch move did not (ReflectoLearn#29, R2c). Coordinates are whitened by
+    the start fit's covariance (θ = θ_start + L z, L its Cholesky factor); DE is affine-invariant, so
+    this sets the shape of the initial ensemble, a 0.1 σ ball around the start. emcee's
+    DESnookerMove is not used: it does not leave the target invariant (ReflectoFit#10). The first
+    half of the chain is discarded. While the kept half is shorter than TAU_FACTOR times the largest
+    integrated autocorrelation time, the chain is extended, up to `max_steps`; if it is still short,
+    `converged` is False and a RuntimeWarning says so. `converged` is that τ criterion only: a basin
+    the walkers never reach from the start does not show in τ.
 
     `loss` "poisson" is the likelihood of counts (needs counts_scale); "log" is a Gaussian in log10
     R with one fitted spread ln σ, scaled to `n_independent` points if given (as ReflectoLearn's
     refine.mcmc).
     """
     import warnings
-
-    import emcee
 
     if not model.free:
         raise ValueError("the model has no free parameters")
@@ -399,32 +426,13 @@ def mcmc(
             walkers
         )
 
-    sampler = emcee.EnsembleSampler(
-        walkers,
-        ndim,
-        log_prob,
-        vectorize=True,
-        moves=[(emcee.moves.DEMove(), 0.8), (emcee.moves.DESnookerMove(), 0.2)],
-    )
-    sampler.random_state = np.random.RandomState(seed).get_state()
-    state = sampler.run_mcmc(z0, steps, progress=False)
-    total = steps
-
-    def theta_chain():
-        chain = sampler.get_chain(discard=total // 2)  # (S, W, ndim)
+    def to_params(chain):
         th = theta0 + chain[..., :p] @ chol.T
         return np.concatenate([th, chain[..., p:]], axis=-1)
 
-    while True:
-        chain = theta_chain()
-        tau = emcee.autocorr.integrated_time(chain, quiet=True)
-        kept = total - total // 2
-        margin = float(kept / np.max(tau))
-        if margin >= TAU_FACTOR or total >= max_steps:
-            break
-        more = min(total, max_steps - total)
-        state = sampler.run_mcmc(state, more, progress=False)
-        total += more
+    chain, tau, total, sampler = _ensemble(log_prob, z0, steps, max_steps, seed, to_params)
+    kept = total - total // 2
+    margin = float(kept / np.max(tau))
     converged = margin >= TAU_FACTOR
     if not converged:
         warnings.warn(
