@@ -22,6 +22,7 @@ dependencies = [
     "numpy>=2.0",
     "numba>=0.61",
     "scipy>=1.13",
+    "periodictable>=2.1.0",
 ]
 
 [project.optional-dependencies]
