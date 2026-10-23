@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -35,6 +36,7 @@ reflectofit = "reflectofit.cli:main"
 Homepage = "https://github.com/NaNIsaac/ReflectoFit"
 Repository = "https://github.com/NaNIsaac/ReflectoFit"
 Issues = "https://github.com/NaNIsaac/ReflectoFit/issues"
+Changelog = "https://github.com/NaNIsaac/ReflectoFit/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [

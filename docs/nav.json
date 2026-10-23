@@ -1,0 +1,15 @@
+{
+  "sidebar": [
+    {
+      "text": "Getting Started",
+      "items": [{ "text": "Overview", "link": "index.md" }]
+    },
+    {
+      "text": "Design",
+      "items": [
+        { "text": "Design notes", "link": "DESIGN.md" },
+        { "text": "Engine benchmark scripts", "link": "design-bench/README.md" }
+      ]
+    }
+  ]
+}
