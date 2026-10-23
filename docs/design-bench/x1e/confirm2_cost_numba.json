@@ -1,0 +1,15 @@
+{
+ "backend": "numba",
+ "first_s": 2.082219300005818,
+ "steady_s": [
+  0.7546925999922678,
+  0.7525461000041105,
+  0.7486313999979757,
+  0.795008199987933,
+  0.9909948999993503
+ ],
+ "median_steady_s": 0.7546925999922678,
+ "nodes_per_point_mean": 119.29825,
+ "nodes_per_point_max": 1408,
+ "criterion": "<= 1 s and <= 2 GB (memory from the job cap report)"
+}
