@@ -6,7 +6,6 @@ ratio) times the footprint factor at that angle. The weighted sum over nodes is 
 background is added (DESIGN.md section 2). Every instrument field may be a scalar or a (B,) array, one value per curve.
 """
 
-import warnings
 from dataclasses import dataclass, fields
 from typing import Any
 
@@ -14,6 +13,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from scipy.special import erf
 
+from reflectofit import resolution
 from reflectofit.kernel import parratt
 from reflectofit.structure import as_batch
 from reflectofit.units import CU_KALPHA1, CU_KALPHA2
@@ -41,8 +41,9 @@ class Instrument:
     beam_sigma: Any = None
     """Gaussian σ of the beam profile at the sample [mm] (FWHM / 2.3548), beam centred."""
     nodes: int | None = None
-    """Nodes of the resolution integral; None chooses them from the resolution width and the stack's
-    total thickness (`resolution_nodes`)."""
+    """None: each point gets the node count its resolution width, the fringes and any nearby
+    critical edge need (`reflectofit.resolution`). An int: that many nodes for every point, faster
+    and of the accuracy the count allows; also the way to vmap over resolution parameters."""
 
     def replace(self, **changes) -> "Instrument":
         values = {f.name: getattr(self, f.name) for f in fields(self)}
@@ -56,10 +57,35 @@ class _NumpyOps:
     arcsin = staticmethod(np.arcsin)
     clip = staticmethod(np.clip)
     erf = staticmethod(erf)
+    exp = staticmethod(np.exp)
+    cat = staticmethod(np.concatenate)
 
     @staticmethod
     def column(x, b):
         return np.broadcast_to(np.asarray(x, dtype=float), (b,)).reshape(b, 1, 1)
+
+    @staticmethod
+    def take_rows(values, idx):
+        """values (B, Q) gathered at idx (B, M)."""
+        return np.take_along_axis(values, idx, axis=1)
+
+    @staticmethod
+    def sum_rows(values, idx, width):
+        """(B, width) sums of values (B, M) by idx (B, M)."""
+        b = values.shape[0]
+        flat = (idx + width * np.arange(b)[:, None]).ravel()
+        return np.bincount(flat, values.ravel(), minlength=b * width).reshape(b, width)
+
+
+def _numpy(x) -> np.ndarray:
+    """Values of an array or tensor as numpy, without its graph (also under torch.func.jacfwd)."""
+    if not hasattr(x, "detach"):
+        return np.asarray(x)
+    x = x.detach()
+    try:
+        return x.cpu().numpy()
+    except RuntimeError:  # a functorch-wrapped tensor has no storage; its values are still readable
+        return np.array(x.tolist())
 
 
 def _active(x) -> bool:
@@ -72,88 +98,100 @@ def _active(x) -> bool:
     return bool(np.any(np.asarray(x) != 0))
 
 
-NODE_SPAN = 6.5
-"""The resolution integral runs over ±NODE_SPAN standard deviations."""
-NODE_DQ = 3e-4
-"""Largest node spacing in q [Å⁻¹]; resolves the square-root kink of R at a critical edge."""
-MAX_NODES = 401
+ROWS_PER_BLOCK = 256
+"""Curves per block of the resolution integral (bounds the flat node arrays)."""
 
 
-def resolution_nodes(sigma_max: float, thickness: float) -> int:
-    """Node count of the uniform (Gaussian-weighted trapezoid) resolution rule.
-
-    Spacing h, in units of σ, is the smallest of 0.5, NODE_DQ / σ and 2π / (2 σ T + 8): the last
-    keeps the rule exact for fringes of a film of total thickness T up to well past the point where
-    the resolution damps them. Against a brute-force convolution this stays within 1e-8 relative for
-    σ up to 2e-3 Å⁻¹ and T up to 4000 Å (physics review on ReflectoFit#2). Above MAX_NODES the count
-    is capped with a warning.
-    """
-    if sigma_max <= 0:
-        return 1
-    h = min(0.5, NODE_DQ / sigma_max, 2 * np.pi / (2 * sigma_max * thickness + 8))
-    n = 2 * int(np.ceil(NODE_SPAN / h)) + 1
-    if n > MAX_NODES:
-        warnings.warn(
-            f"resolution needs {n} nodes (σ_q up to {sigma_max:.2g} Å⁻¹, thickness {thickness:.0f} Å);"
-            f" capped at {MAX_NODES}, the smeared curve may be inaccurate",
-            stacklevel=3,
-        )
-        n = MAX_NODES
-    return n
+def _at_angles(ops, kernel, x, packed, inst: Instrument):
+    """R at nominal-true q values x (B, M): Kα₁ (and Kα₂ at the same angle) times the footprint."""
+    b = x.shape[0]
+    wl1 = inst.wavelength
+    # a point below q = 0 is the mirror image of a grazing angle; keep it at grazing incidence
+    sin_t = ops.clip(x * (wl1 / (4.0 * np.pi)), 1e-12, 1.0)
+    r = kernel((4.0 * np.pi / wl1) * sin_t, *packed)
+    if _active(inst.kalpha2_ratio):
+        a = ops.column(inst.kalpha2_ratio, b)[..., 0]
+        r2 = kernel((4.0 * np.pi / inst.kalpha2_wavelength) * sin_t, *packed)
+        r = (r + a * r2) / (1.0 + a)
+    if inst.sample_length is not None and inst.beam_sigma is not None:
+        length = ops.column(inst.sample_length, b)[..., 0]
+        beam = ops.column(inst.beam_sigma, b)[..., 0]
+        r = r * ops.erf(length * sin_t / (2.0 * np.sqrt(2.0) * beam))
+    return r
 
 
-def _value(x) -> float:
-    if hasattr(x, "detach"):
-        x = x.detach()
-    return float(x.max()) if hasattr(x, "max") else float(x)
+def _point_smear(ops, kernel, q_true, sigma, packed, inst: Instrument):
+    """Resolution with a node count per point (`reflectofit.resolution`) for one block of curves:
+    all nodes of a curve in one flat list, one kernel call, summed back per point."""
+    b, nq = q_true.shape[0], q_true.shape[1]
+    qt, sg = _numpy(q_true)[..., 0], _numpy(sigma)[..., 0]
+    sld, thickness = _numpy(packed[0]), _numpy(packed[1])
+    ka2 = inst.kalpha2_wavelength / inst.wavelength if _active(inst.kalpha2_ratio) else None
+    layouts = []
+    for i in range(b):
+        qc, width = resolution.edges(sld[i], ka2)
+        counts = resolution.point_nodes(qt[i], sg[i], float(thickness[i, 1:-1].sum()), qc, width)
+        layouts.append(resolution.layout(counts))
+    m = max(o.size for o, _, _ in layouts)
+    # padding nodes sit on point 0 with weight 0, so a curve's result does not depend on its batch
+    owner = np.stack([np.pad(o, (0, m - o.size)) for o, _, _ in layouts])
+    u = np.stack([np.pad(x, (0, m - x.size)) for _, x, _ in layouts])
+    w = np.stack([np.pad(x, (0, m - x.size)) for _, _, x in layouts])
+    nodes = ops.take_rows(q_true[..., 0], owner) + ops.take_rows(
+        sigma[..., 0], owner
+    ) * ops.asarray(u)
+    r = _at_angles(ops, kernel, nodes, packed, inst)
+    return ops.sum_rows(r * ops.asarray(w), owner, nq)
 
 
 def _observed(ops, kernel, q, b, packed, inst: Instrument):
     """Shared pipeline. q (Q,) nominal; returns (B, Q).
 
     The offset comes first: the true angle is the nominal 2θ plus the offset, and the resolution
-    is a Gaussian in q around the q of that true angle. Each quadrature node is an angle at which
-    Kα₁, Kα₂ and the footprint are evaluated.
+    is a Gaussian in q around the q of that true angle. Kα₁, Kα₂ and the footprint are evaluated at
+    the angle of each point of the resolution integral.
     """
     q = q.reshape(1, -1, 1)
     wl1 = inst.wavelength
     to_deg = 180.0 / np.pi
     theta = ops.arcsin(ops.clip(q * (wl1 / (4.0 * np.pi)), 0.0, 1.0)) * to_deg
     theta = ops.clip(theta + 0.5 * ops.column(inst.tth_offset, b), 1e-9, 0.5 * MAX_TTH)
-    q_true = (4.0 * np.pi / wl1) * ops.sin(theta / to_deg)
-    if inst.nodes != 1 and (_active(inst.sigma_q) or _active(inst.dq_over_q)):
+    q_true = (4.0 * np.pi / wl1) * ops.sin(theta / to_deg)  # (B, Q, 1)
+    resolved = _active(inst.sigma_q) or _active(inst.dq_over_q)
+    if not resolved or inst.nodes == 1:
+        r = _at_angles(ops, kernel, q_true[..., 0], packed, inst)
+    else:
         sigma2 = ops.column(inst.sigma_q, b) ** 2 + (ops.column(inst.dq_over_q, b) * q_true) ** 2
-        n = inst.nodes
-        if n is None:
-            # node count from values: fine under jacfwd; under vmap over the resolution pass nodes
-            total = _value(packed[1].sum(-1))
-            n = resolution_nodes(_value(sigma2) ** 0.5, total)
-        u = np.linspace(-NODE_SPAN, NODE_SPAN, n)
-        w = np.exp(-0.5 * u**2)
         # the floor keeps d sqrt / d sigma finite (zero) for a curve without resolution
         sigma = ops.sqrt(ops.clip(sigma2, 1e-300, None))
-        nodes = q_true + sigma * ops.asarray(u).reshape(1, 1, -1)
-        weights = ops.asarray(w / w.sum()).reshape(1, 1, -1)
-    else:
-        nodes = q_true
-        weights = None
-    # a node below q = 0 is the mirror image of a grazing angle; keep it at grazing incidence
-    sin_t = ops.clip(nodes * (wl1 / (4.0 * np.pi)), 1e-12, 1.0)
-    shape = sin_t.shape
-    r = kernel((4.0 * np.pi / wl1) * sin_t.reshape(b, -1), *packed).reshape(shape)
-    if _active(inst.kalpha2_ratio):
-        a = ops.column(inst.kalpha2_ratio, b)
-        r2 = kernel((4.0 * np.pi / inst.kalpha2_wavelength) * sin_t.reshape(b, -1), *packed)
-        r = (r + a * r2.reshape(shape)) / (1.0 + a)
-    if inst.sample_length is not None and inst.beam_sigma is not None:
-        arg = (
-            ops.column(inst.sample_length, b)
-            * sin_t
-            / (2.0 * np.sqrt(2.0) * ops.column(inst.beam_sigma, b))
-        )
-        r = r * ops.erf(arg)
-    r = (r * weights).sum(-1) if weights is not None else r[..., 0]
+        if inst.nodes is None:
+            blocks = []
+            for start in range(0, b, ROWS_PER_BLOCK):
+                rows = slice(start, min(start + ROWS_PER_BLOCK, b))
+                part = tuple(a[rows] for a in packed)
+                blocks.append(
+                    _point_smear(ops, kernel, q_true[rows], sigma[rows], part, _rows(inst, rows, b))
+                )
+            r = ops.cat(blocks) if len(blocks) > 1 else blocks[0]
+        else:
+            u = np.linspace(-resolution.SPAN, resolution.SPAN, inst.nodes)
+            w = np.exp(-0.5 * u**2)
+            nodes = q_true + sigma * ops.asarray(u).reshape(1, 1, -1)
+            shape = nodes.shape
+            r = _at_angles(ops, kernel, nodes.reshape(b, -1), packed, inst).reshape(shape)
+            r = (r * ops.asarray(w / w.sum()).reshape(1, 1, -1)).sum(-1)
     return ops.column(inst.i0, b)[..., 0] * r + ops.column(inst.background, b)[..., 0]
+
+
+def _rows(inst: Instrument, rows: slice, total: int) -> Instrument:
+    """The instrument for a block of curves (per-curve fields sliced)."""
+    changes = {}
+    for f in fields(inst):
+        v = getattr(inst, f.name)
+        per_curve = v is not None and np.ndim(v) == 1 and len(v) == total
+        if f.name not in ("wavelength", "kalpha2_wavelength", "nodes") and per_curve:
+            changes[f.name] = v[rows]
+    return inst.replace(**changes) if changes else inst
 
 
 def forward(

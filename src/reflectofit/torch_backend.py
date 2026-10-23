@@ -13,7 +13,7 @@ from torch import Tensor
 from reflectofit.forward import Instrument, _observed
 from reflectofit.structure import Stack, as_batch
 
-CHUNK = 4096
+CHUNK = 1024
 
 
 def parratt(q: Tensor, sld: Tensor, thickness: Tensor, roughness: Tensor) -> Tensor:
@@ -50,6 +50,17 @@ class _TorchOps:
     sin = staticmethod(torch.sin)
     arcsin = staticmethod(torch.asin)
     erf = staticmethod(torch.erf)
+    exp = staticmethod(torch.exp)
+    cat = staticmethod(torch.cat)
+
+    def take_rows(self, values, idx):
+        """values (B, Q) gathered at idx (B, M)."""
+        return values.gather(1, torch.as_tensor(idx, device=self.device))
+
+    def sum_rows(self, values, idx, width):
+        """(B, width) sums of values (B, M) by idx (B, M)."""
+        out = torch.zeros(values.shape[0], width, dtype=values.dtype, device=self.device)
+        return out.scatter_add(1, torch.as_tensor(idx, device=self.device), values)
 
     @staticmethod
     def clip(x, lo, hi):
