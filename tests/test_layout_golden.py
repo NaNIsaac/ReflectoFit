@@ -46,9 +46,14 @@ def test_layout_is_the_registered_rule(k):
     counts, u, w, err, capped = got
     assert np.array_equal(counts, GOLDEN[f"{k}_counts"])
     assert np.array_equal(capped, GOLDEN[f"{k}_capped"])
-    # u is in units of σ and can be 0; err can be 0
-    for key, value, atol in (("u", u, 1e-14), ("w", w, 0.0), ("err", err, 1e-18)):
-        np.testing.assert_allclose(value, GOLDEN[f"{k}_{key}"], rtol=1e-13, atol=atol, err_msg=key)
+    # u is in units of σ and can be 0; err is a difference of nearly equal panel values, so its
+    # rounding is amplified (1e-16 estimates are rounding noise); 1e-12 is far below REFINE_TOL
+    for key, value, rtol, atol in (
+        ("u", u, 1e-13, 1e-14),
+        ("w", w, 1e-13, 0.0),
+        ("err", err, 1e-6, 1e-12),
+    ):
+        np.testing.assert_allclose(value, GOLDEN[f"{k}_{key}"], rtol=rtol, atol=atol, err_msg=key)
 
 
 @pytest.mark.parametrize("k", range(4))
