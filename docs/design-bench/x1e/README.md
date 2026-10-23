@@ -98,3 +98,23 @@ confirmation grid 2:
 The rule as committed in 75c7b1c is the one under test. Development data now includes the rerun of
 grid 1 with this rule (`dev1_accuracy.json`, worst 1.7e-5). Confirmation grid 2 and the criteria
 are those of the second registration, unchanged; grid 2 has not been run.
+
+## Conditional fourth registration (written before the quiet cost measurement)
+
+If criterion 2 (cost) fails in the quiet window with the rule of the third registration
+(75c7b1c; the speed-up af72414 keeps its nodes bit for bit, `tests/test_layout_golden.py`), that
+failure is recorded as a falsification and the rule changes only in two constants:
+`GAUSS_PER_PANEL` 3 → 6.5 σ and `PHASE_PER_PANEL` 6 → 10 rad (values tried on the development grid
+with `dev.py` after the first registration). Everything else stays. It is then confirmed on a new grid 3,
+nothing tuned on it:
+
+- ReflectoLearn's default distribution at seed 20261027: 16 curves, σ_q drawn, at 1e-4 and 6e-3.
+- New real-SLD stacks on Si 20.07 at σ_q 1e-4, 5e-4, 2e-3 and dq/q 0.02, 600 points from q = 0.01
+  to 0.2 Å⁻¹: a 15-period superlattice 50 / 30 Å and 10 / 20 Å; a 30-period stack 64 / 20 Å and
+  0.5 / 20 Å (a layer with a very low edge); a Ni / C / Ni waveguide with real SLDs 64 / 50 Å,
+  18 / 500 Å, 64; a thick real film 40 / 2000 Å.
+- The absorbing cases of `tests/test_review_physics.py`, unchanged.
+
+Criteria and reference as in the first registration (accuracy ≤ 1e-4 at every counted point,
+capped points included; cost ≤ 1 s and ≤ 2 GB in a quiet window; existing tests pass). If the
+quiet cost passes with the third registration's rule, nothing here applies.
