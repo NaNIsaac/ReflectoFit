@@ -14,6 +14,19 @@ where whitening and DE moves converged chains that the stretch move did not, Ref
   5. The log likelihood (Gaussian in log10 R with one fitted spread, as ReflectoLearn's refine.mcmc)
      runs and reports the spread; no width criterion (R2c found it up to 2.5 times too wide).
 A failure is reported as a failure; the criteria are not changed after the run.
+First run (ce04cc6): all held, with half-width ratios 0.955 and 0.958.
+
+Second registration (ReflectoFit#10, written before the sampler is changed): emcee 3.1.6's
+DESnookerMove does not leave the target invariant, and the 0.5-2 band of criterion 2 let its bias
+through (physics review of ReflectoFit#9: on N(0, I) the 0.8 DE + 0.2 snooker mix gives variance
+0.934 at d = 5 and 0.861 at d = 13). The sampler becomes DEMove alone. Criteria 1-5 stay as they
+are (2 is not re-graded); added:
+  6. The ensemble on a known target, N(0, I_d) through the sampler's own moves (64 walkers started
+     in the target, 6000 steps, first half discarded, seed 0): the variance averaged over the
+     coordinates within 1 ± 0.03, and so the 68 % half-width, for d = 5 and d = 13 (about five
+     standard errors at the τ the review measured; it separates 0.934 and 0.861 from 1).
+  7. On the curve of criterion 2, the half-width ratios of thickness and SLD within 1 ± 0.05 (the
+     least-squares errors equal the profile half-widths to 1e-3 there, so the expected ratio is 1).
 """
 
 import math
@@ -23,7 +36,7 @@ import pytest
 
 from reflectofit import Instrument, Layer, Stack, tth_to_q
 from reflectofit.data import Curve
-from reflectofit.fit import lsq, mcmc
+from reflectofit.fit import _ensemble, lsq, mcmc
 from reflectofit.model import Model
 
 emcee = pytest.importorskip("emcee")
@@ -130,3 +143,26 @@ def test_log_likelihood_runs_and_reports_its_spread(data):
     res = mcmc(TRUTH, curve, best, loss="log", counts_scale=S, steps=400, max_steps=400, seed=2)
     assert "log_sigma" in res.intervals
     assert np.isfinite(res.intervals["log_sigma"]).all()
+
+
+@pytest.mark.parametrize("d", [5, 13])
+def test_the_ensemble_samples_a_known_gaussian(d):
+    def log_prob(z):
+        return -0.5 * np.sum(np.atleast_2d(z) ** 2, axis=1)
+
+    z0 = np.random.default_rng(0).standard_normal((64, d))
+    chain, _, _, _ = _ensemble(log_prob, z0, steps=6000, max_steps=6000, seed=0)
+    flat = chain.reshape(-1, d)
+    variance = flat.var(axis=0).mean()
+    p16, p84 = np.percentile(flat, [16, 84], axis=0)
+    half_width = (0.5 * (p84 - p16)).mean()
+    assert abs(variance - 1) <= 0.03, variance
+    assert abs(half_width - 1) <= 0.03, half_width
+
+
+@pytest.mark.parametrize("key", ["film.thickness", "film.sld"])
+def test_width_ratio_is_near_one_on_the_gaussian_curve(data, chain, key):
+    curve, best = data
+    p16, p84 = chain.intervals[key][0], chain.intervals[key][2]
+    ratio = 0.5 * (p84 - p16) / _profile_half_width(curve, best, key)
+    assert abs(ratio - 1) <= 0.05, ratio
