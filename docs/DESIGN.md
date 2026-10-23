@@ -24,7 +24,7 @@ its own by someone outside this organisation and each described by one sentence:
 | Users | anyone with a measured specular XRR curve | anyone training or testing an inverse model |
 | Owns | the physics: forward model, instrument model, materials, conventions, metrics, measured-file readers, stitching, optimisers, model selection, reports | the data distribution: priors over structures and instruments, noise, dataset files and their metadata |
 | CLI | `fit`, `score`, `stitch`, `convert` | `sim`, `describe` |
-| Depends on | numpy, numba; scipy for fitting; extras: torch, emcee | the fitter (core only), numpy; extra: h5py |
+| Depends on | numpy, numba, periodictable; scipy for fitting; extras: torch, emcee | the fitter (core only), numpy; extra: h5py |
 
 Out of scope for both, and where it stays:
 
@@ -197,12 +197,12 @@ These are fixed in the fitter and every other module uses them. **[proposal]** u
 | Oxide | no implicit oxide. A structure lists every medium. The generator's templates name the order: `film_on_oxide_on_si` (SiO₂ under the film, DECISIONS #19 recommendation b) and `oxide_on_film_on_si` (surface oxide, option c's second half). The default template follows the Isaac decision on DECISIONS #19; until then the generator requires the template to be chosen explicitly. |
 | Units | thickness, roughness, wavelength Å; SLD 1e-6 Å⁻² complex; q Å⁻¹; 2θ and offsets degrees; sample length and beam width mm. |
 | Absorption sign | Im SLD > 0 is absorption in every public API. The Parratt kernel conjugates internally; the Abeles form used by ReflectoLearn takes it as is. [fact] Mixing the two conventions gives wrong curves without any error (relative errors 8 to 600 on the reference structures in this audit's first, wrong, run); a test pins it. |
-| Kernel | float64 Parratt with k² = (q/2)² − 4π(ρ − ρ_ambient), Névot-Croce roughness. No absorption guard; absorption comes from the materials (DECISIONS #9). Exact n² (GenX) is not used: the susceptibility is linear in density, and squaring n = 1 − δ adds a δ² term that is not physics [inference; physics to judge, section 5]. |
-| Materials | SLD from composition and mass density (DECISIONS #8): Si 2.33 g/cm³ → 20.06, SiO₂ 2.20 g/cm³ → 18.86 (+ imaginary parts at Cu Kα). No copied constants. |
+| Kernel | float64 Parratt with k² = (q/2)² − 4π(ρ − ρ_ambient), Névot-Croce roughness. No absorption guard; absorption comes from the materials (DECISIONS #9). This form is exact within the model, with no small-angle step when q is measured in the ambient: tabulated δ is r_e λ² n_a f₁ / 2π, so 1 − 2δ (+ 2iβ) is the model's ε. Exact n² (GenX) squares the first-order root n = 1 − δ and puts back a δ² term the model does not have (physics review on ReflectoFit#1). |
+| Materials | SLD from composition and mass density with a named f₁, f₂ table (DECISIONS #8): the fitter uses the X-ray tables of `periodictable`, which give at Cu Kα₁ Si 2.33 g/cm³ → 20.071 + 0.457i and SiO₂ 2.20 g/cm³ → 18.865 + 0.244i (DECISIONS #8's 20.06 for Si came from another table, 5e-4 lower). No copied constants. |
 | Wavelength | explicit; default Cu Kα₁ 1.5406 Å. Kα₂ 1.54439 Å, intensity ratio a (physical ≈ 0.5) as a parameter. |
 | Resolution | Gaussian in q, given as a standard deviation (not FWHM): σ_q(q) = √(σ₀² + (r·q)²). σ₀ constant term, r = dq/q term. Evaluated pointwise by Gauss-Hermite quadrature at each measured q, so non-uniform grids and masks need no resampling. Conversions from FWHM inputs are explicit (`fwhm_to_sigma`). |
-| Footprint | factor erf(L sin θ / (2√2 σ_b)), σ_b the beam's Gaussian σ in mm (FWHM / 2.3548), L the sample length in mm. A one-parameter form erf(s sin θ) is the fitting reparameterisation. |
-| Order of effects | R(q_eff) with q_eff from 2θ + offset → Kα₂ mix → resolution → footprint → × I0 → + background. |
+| Footprint | factor erf(L sin θ / (2√2 σ_b)) for a Gaussian beam centred on the sample: σ_b the beam's Gaussian σ in mm (FWHM / 2.3548), L the sample length in mm, θ the true incidence angle (after the 2θ offset). A one-parameter form erf(s sin θ) is the fitting reparameterisation. |
+| Order of effects | for each quadrature node of the resolution: angle from 2θ + offset → R(q) × footprint(θ) → Kα₂ mix; then the weighted sum over nodes → × I0 → + background. The footprint sits inside the angular integral because it depends on angle; multiplying it after the convolution is an approximation that fails first at the lowest angles, and inside costs the same. |
 | Background, I0 | R_obs = I0 · (...) + b, b in R units; fitting may parameterise log10 b. |
 | Counts | expected counts λ = S · R_obs with S the counts at R = 1 for that point (counting time and attenuators folded in, per point when stitched). Noise model: Poisson(λ) + optional dark counts and Gaussian read noise σ_read. Stored data keep the counts; R = y / S is derived. |
 | Precision | float64 for fitting and for reference curves. complex64 allowed only for the simulator's GPU bulk path, with its error recorded in the dataset metadata (section 5: max relative 7e-3 in deep minima, median 3-7e-5 for the ReflectoLearn kernel). |
@@ -369,10 +369,10 @@ How each repository would switch:
 
 All numbers measured on 2026-10-24 on the lab PC (Ryzen 5 7500F 6 cores / 12 threads, RTX 5070,
 Windows 11, Python 3.13.14, numpy 2.5.4, numba 0.68.0, jax 0.12.0.1, torch 2.14.1 CPU and 2.11.0+cu128
-for CUDA, refnx 0.1.67, genx3 3.8.13, rustc 1.99.1). Not in a quiet window: CPU load was 10-16 % before
-the runs; repeated Rust runs varied by up to 40 %. Treat ratios as indicative; the final table is
-re-measured in a quiet window before X1b's engine is merged. Scripts and raw JSON are in
-`docs/design-bench/`.
+for CUDA, refnx 0.1.67, genx3 3.8.13, rustc 1.99.1). Section 5.3 is the quiet-window run (01:15-01:20
+local clock, no other heavy job; CPU load 25 % just before and 14 % just after, which includes starting
+the runs). The first, non-quiet pilot is kept as `throughput_pilot.json`; it understated numba's batch
+throughput by up to 6× (thread contention). Scripts and raw JSON are in `docs/design-bench/`.
 
 ### 5.1 Agreement
 
@@ -387,16 +387,20 @@ media). 2000 q points, 2θ 0.05-8°, no resolution.
 | refnx 0.1.67 (`dq=0`) | 2.8e-13 – 5.1e-13 | ≤ 2.6e-15 | same |
 | JAX Parratt float64 | 2.8e-13 – 1.6e-12 | ≤ 1.1e-15 | same |
 | Rust Parratt float64 (written for this test; two structures) | 3.6e-13 – 2.7e-12 | ≤ 1.9e-15 | same |
-| **GenX 3.8.13 `ReflQ`** | **2.6e-4 – 5.7e-3** | 2.4e-5 – 2.6e-5 | **> 1e-6: physics to judge** |
+| **GenX 3.8.13 `ReflQ`** | **2.6e-4 – 5.7e-3** | 2.4e-5 – 2.6e-5 | **> 1e-6: an SLD relabelling (physics review)** |
 | numpy Parratt with exact n² | identical to GenX to all printed digits | | explains GenX |
 | **ReflectoLearn `AbelesMatrix` as shipped (complex64, +1e-9j)** | **1.0e-3 – 7.3e-3** | 3.3e-5 – 6.8e-5 | **> 1e-6: precision, known (DECISIONS #9)** |
 
 [fact] Five independent implementations agree to ~1e-12, so the float64 Parratt is a well-defined
-reference. GenX differs because it builds k from n² with n = 1 − δ, which adds δ² ≈ 1e-10 to k²/k₀²;
-the effect is about 2.5e-5 of R almost everywhere and reaches 6e-3 only in deep minima. [inference]
-The linear form is the physical one (the susceptibility is linear in density), and the GenX difference
-is far below counting noise except in minima with few counts; physics lane to confirm (rule 22, E
-record). ReflectoLearn's shipped engine differs by float32 rounding and the guard, not by algorithm.
+reference. GenX builds k from n² with n = 1 − δ. The physics review (ReflectoFit#1, reproduced
+independently) showed this is exact: the exact-n² form equals the linear form with every SLD scaled by
+1 − λ²ρ/4π (≤ 2.5e-5 at Cu Kα, 3.8e-6 for Si), at every q; feeding that map into the linear kernel
+reproduces GenX to 4e-10. Fits therefore differ only in SLD, by that factor, with d and σ unchanged.
+The relative difference in R is largest in deep minima, but in counts the minima carry almost nothing:
+at 10⁸ counts and fixed parameters the difference is ΔD ≈ 5 over 2000 points, 82-88 % of it below
+1.2 q_c (a critical-edge shift Δq_c/q_c = −λ²ρ/8π). The linear form is the model's; GenX can serve as a
+third cross-check at about 1e-9 when its SLDs are given through the inverse map. ReflectoLearn's
+shipped engine differs by float32 rounding and the guard, not by algorithm.
 
 Consequence for X1b's acceptance test ("matches ReflectoLearn physics and XRefine Abeles to 1e-6"):
 it cannot hold against the shipped complex64 engines. **Adopted (BACKLOG X1b, 2026-10-24):** the new
@@ -404,9 +408,12 @@ kernels are tested against the float64 Parratt and refnx at 1e-10 relative, agai
 kernel run in complex128 at 1e-10, and against the shipped complex64 engines at the measured float32
 level (max relative 1e-2, median 1e-4), stated as such.
 
-A side finding from writing the Rust kernel: computing Im √z as √((|z| − Re z)/2) loses all digits
-when Im z is small (here 5e-8 relative error at high q); the stable form is Im z / (2 Re √z). Every
-backend's complex square root gets a test at small absorption.
+A side finding from writing the Rust kernel: computing Im √z as √((|z| − Re z)/2) loses digits
+when Re z > 0 and Im z is small (here 5e-8 relative error at high q). The stable form takes the large
+component from √((|z| + |Re z|)/2) and the small one from Im z divided by twice the large one: above
+the critical edge (Re z ≥ 0) the large one is Re √z, below it (the plateau, Re z < 0) it is Im √z, where
+Im z / (2 Re √z) would divide by a rounded zero. `rs/src/main.rs` branches this way. Every backend's
+complex square root gets a test on both branches at small absorption.
 
 ### 5.2 Targets
 
@@ -426,50 +433,49 @@ Structures: single film (3 media), 5 layers + Si (7 media), 50-layer superlattic
 
 | Engine | single B=1 | 1k | 100k | 5-layer B=1 | 1k | 100k | SL50 B=1 | 1k | 100k |
 |---|---|---|---|---|---|---|---|---|---|
-| numpy (vectorised over batch) | 8 540 | 9 530 | 8 710 | 3 960 | 3 090 | 3 090* | 460 | 342 | 342* |
-| numba, parallel | 15 500 | 29 500 | 104 000 | 5 560 | 33 600 | 39 900 | 416 | 5 310 | 6 250 |
-| Rust, 12 threads (B=1 single thread) | 32 900 | 209 000 | 215 000 | 10 200 | 70 700 | 75 900 | 1 300 | 9 020 | 8 880 |
-| JAX CPU float64, jit | 19 700 | 64 600 | 49 300 | 6 200 | 16 600 | 14 900 | 1 350 | 1 390 | 1 390* |
-| JAX CPU float32 | 21 000 | 168 000 | 114 000 | 9 920 | 36 400 | 28 500 | 2 230 | 1 790 | 1 790* |
-| torch CPU complex128 (RL kernel) | 4 510 | 23 400 | 20 200 | 1 660 | 5 140 | 4 890 | 432 | 591 | 591* |
-| torch CPU complex64 (RL as shipped) | 3 860 | 30 000 | 27 600 | 1 620 | 8 590 | 8 330 | 353 | 924 | 924* |
-| torch CUDA complex128 | 2 260 | 363 000 | 359 000 | 1 020 | 114 000 | 114 000 | 142 | 11 500 | 11 500 |
-| torch CUDA complex64 | 1 630 | 1 650 000 | 1 670 000 | 870 | 342 000 | 340 000 | 140 | 28 900 | 28 800 |
-| GenX 3.8 `ReflQ` (numba, one thread, loop) | 75 800 | 56 200† | 56 200* | 25 600 | 25 800† | 25 800* | 3 620 | 5 430† | 5 430* |
-| refnx 0.1.67 (loop) | 893 | 875† | 875* | 898 | 896† | 896* | 793 | 752† | 752* |
+| numpy (vectorised over batch) | 10 500 | 9 080 | 9 290 | 3 930 | 3 120 | 3 120* | 418 | 355 | 355* |
+| **numba, parallel** | 15 800 | 175 000 | 161 000 | 6 010 | 60 000 | **57 100** | 728 | 6 950 | 6 930 |
+| Rust, 12 threads (B=1 single thread) | 32 500 | 191 000 | 196 000 | 10 900 | 77 400 | 78 200 | 1 270 | 9 250 | 9 030 |
+| JAX CPU float64, jit | 19 600 | 63 300 | 50 400 | 7 320 | 18 900 | 15 500 | 1 490 | 1 260 | 1 260* |
+| JAX CPU float32 | 19 100 | 141 000 | 98 000 | 10 700 | 33 600 | 28 000 | 2 160 | 1 780 | 1 780* |
+| torch CPU complex128 (RL kernel) | 4 380 | 21 400 | 20 600 | 2 130 | 5 590 | 5 310 | 415 | 639 | 639* |
+| torch CPU complex64 (RL as shipped) | 4 000 | 27 200 | 27 500 | 2 260 | 7 930 | 8 380 | 451 | 921 | 921* |
+| torch CUDA complex128 | 2 290 | 361 000 | 361 000 | 1 010 | 114 000 | 114 000 | 142 | 11 500 | 11 500 |
+| torch CUDA complex64 | 1 620 | 1 850 000 | 1 640 000 | 874 | 342 000 | 338 000 | 139 | 28 800 | 28 800 |
+| GenX 3.8 `ReflQ` (numba, one thread, loop) | 46 900 | 47 000† | 47 000* | 22 800 | 21 800† | 21 800* | 3 330 | 3 210† | 3 210* |
+| refnx 0.1.67 (loop) | 839 | 850† | 850* | 746 | 826† | 826* | 789 | 795† | 795* |
 
 † measured on 100 curves and scaled. torch CUDA 100k runs as 100 chunks of 1k; the shipped kernel holds
 (B, Q, N) intermediates at once and ran out of device memory at B = 4096 with 24 media and 2000 q in
 the pilot: throughput fell to about 1 200 curves/s and the complex128 run did not finish within 60 s, consistent with exceeding device memory (not confirmed). Chunking is required either way.
 
 Jacobian, single film, batch 1, 9 parameters (d, σ, Re ρ of each medium): numba central differences
-(18 curves in one call) 0.21 ms; JAX `jacfwd` float64 0.44 ms; torch forward-mode
-(`autograd.functional.jacobian`, vectorised) 2.9 ms, reverse-mode 20 ms (218 ms without
+(18 curves in one call) **0.178 ms**; JAX `jacfwd` float64 0.52 ms; torch forward-mode
+(`autograd.functional.jacobian`, vectorised) 2.6 ms, reverse-mode 16 ms (222 ms without
 `vectorize=True`).
 
 ### 5.4 Decision
 
-[proposal]
-
 - **Reference**: float64 Parratt in numpy, kept readable in the test suite as the specification;
   refnx as an independent cross-check in the test dependency group.
 - **CPU backend (default, fitter and simulator): numba float64.** Meets both targets with margin
-  (5 layers: 40 000 curves/s, 1M in 25 s; Jacobian 0.21 ms). Pure-Python wheels on every platform, no
+  (5 layers: 57 000 curves/s, 1M in 18 s; Jacobian 0.178 ms). Pure-Python wheels on every platform, no
   build matrix, numba is already GenX's accelerator.
 - **GPU and autodiff backend: torch** (complex128 for fitting; complex64 allowed for bulk simulation
   with the recorded error), chunked. ReflectoLearn trains in torch and X2 uses `torch.func.jacfwd`, so
   this keeps their switch an import change. 1M 5-layer curves take about 9 s (complex128) on the RTX
   5070.
-- **Not now: Rust.** It is 1.4-2× faster than numba at batch 100k, 2-3× at batch 1, and up to 7× at batch 1k for a single film (numba's thread start-up dominates there); seltools
-  shows the PyO3 build (maturin, five targets). Neither target needs it; it stays an option behind the
-  same backend interface if the quiet re-measurement or a later target (for example 50-layer
-  superlattice fitting) misses.
+- **Not now: Rust.** In the quiet window it is 1.2-1.4× faster than numba at batch 100k and 1.7-2×
+  at batch 1; seltools shows the PyO3 build (maturin, five targets). Neither target needs it; it stays
+  an option behind the same backend interface if a later target (for example 50-layer superlattice
+  fitting) misses.
 - **Not adopted: JAX.** Good CPU float64 numbers, but GPU on native Windows needs WSL2 (DECISIONS #18),
   and it would be a third array framework next to numpy and torch.
 
-Falsification (pre-registered): the numba choice is wrong if, in the quiet re-measurement, 5-layer
-batch-100k throughput is below 17 000 curves/s or the single-film Jacobian above 1 ms; then Rust is
-built behind the backend interface.
+Falsification (pre-registered in ReflectoFit#1 before the quiet run): the numba choice is wrong if,
+in the quiet re-measurement, 5-layer batch-100k throughput is below 17 000 curves/s or the single-film
+Jacobian above 1 ms; then Rust is built behind the backend interface. **Result: 57 100 curves/s and
+0.178 ms; numba float64 stands.**
 
 ## 6. Measured data
 
