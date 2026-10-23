@@ -1,12 +1,14 @@
 """The physics reviews of ReflectoFit#2: resolution with the default rule (thick films, wide
-resolution, weakly absorbing and real-SLD edges), absorbing ambient, gradient at zero resolution."""
+resolution, weakly absorbing and real-SLD edges, waveguides), absorbing ambient, gradient at zero
+resolution."""
 
 import numpy as np
 import pytest
 
-from reflectofit import Instrument, Layer, Stack, forward, tth_to_q
+from reflectofit import Instrument, Layer, Stack, forward, resolution, tth_to_q
 
 SI = 20.07 + 0.46j
+NI = 64 + 1.35j
 Q = np.concatenate([np.linspace(0.015, 0.07, 200), tth_to_q(np.linspace(1.0, 6.0, 150))])
 
 
@@ -41,6 +43,18 @@ CASES = {
         5e-4,
         0.0,
     ),
+    # the final review (ReflectoFit#4): resonances between the edges are narrower than one edge
+    # width, and a real-SLD substrate sets the narrowest width to EDGE_FLOOR
+    "Ni/C/Ni waveguide, sigma 1e-4": (
+        Stack([Layer(NI, 100, 2), Layer(18 + 0.02j, 800, 2)], Layer(NI, roughness=2)),
+        1e-4,
+        0.0,
+    ),
+    "PS-like on real Si, sigma 1e-4": (
+        Stack([Layer(9.6 + 0.012j, 1000, 3)], Layer(20.07, roughness=3)),
+        1e-4,
+        0.0,
+    ),
 }
 
 
@@ -50,6 +64,20 @@ def test_default_resolution_rule_converges(name):
     got = forward(Q, stack, Instrument(sigma_q=sigma_q, dq_over_q=dq_over_q))
     sigma = np.sqrt(sigma_q**2 + (dq_over_q * Q) ** 2)
     np.testing.assert_allclose(got, _brute(Q, stack, sigma), rtol=1e-5)
+
+
+@pytest.mark.parametrize(
+    ("name", "constant", "loose"),
+    [
+        ("Ni/C/Ni waveguide, sigma 1e-4", "RESONANCE", 2.0),
+        ("PS-like on real Si, sigma 1e-4", "EDGE_FLOOR", 1e-5),
+    ],
+)
+def test_the_waveguide_cases_fail_with_a_looser_constant(monkeypatch, name, constant, loose):
+    stack, sigma_q, _ = CASES[name]
+    monkeypatch.setattr(resolution, constant, loose)
+    got = forward(Q, stack, Instrument(sigma_q=sigma_q))
+    assert np.abs(got / _brute(Q, stack, sigma_q) - 1).max() > 1e-5
 
 
 def test_absorbing_ambient_is_rejected():
