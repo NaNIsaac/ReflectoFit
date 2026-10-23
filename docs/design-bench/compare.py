@@ -13,7 +13,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(1, sys.argv[1])
 
-from structures import (  # noqa: E402
+from structures import (
     WAVELENGTH,
     abeles_np,
     arrays,

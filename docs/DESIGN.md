@@ -219,14 +219,25 @@ from reflectofit import Stack, Layer, Instrument, forward, materials
 
 stack = Stack.from_layers(
     ambient=0,
-    layers=[Layer(sld=45 + 1.5j, thickness=240, roughness=6),
-            Layer(sld=materials.sld("SiO2", density=2.20), thickness=10, roughness=3)],
+    layers=[
+        Layer(sld=45 + 1.5j, thickness=240, roughness=6),
+        Layer(sld=materials.sld("SiO2", density=2.20), thickness=10, roughness=3),
+    ],
     substrate=Layer(sld=materials.sld("Si", density=2.33), roughness=3),
 )
-inst = Instrument(wavelength=1.5406, sigma_q=5e-4, dq_over_q=0.0, tth_offset=0.0,
-                  kalpha2_ratio=0.0, sample_length=10, beam_sigma=0.04, i0=1.0, background=1e-8)
-r = forward(q, stack, inst)                       # (Q,) or (B, Q); numba float64
-r = forward(q, params, inst, backend="torch")     # differentiable, complex128 by default
+inst = Instrument(
+    wavelength=1.5406,
+    sigma_q=5e-4,
+    dq_over_q=0.0,
+    tth_offset=0.0,
+    kalpha2_ratio=0.0,
+    sample_length=10,
+    beam_sigma=0.04,
+    i0=1.0,
+    background=1e-8,
+)
+r = forward(q, stack, inst)  # (Q,) or (B, Q); numba float64
+r = forward(q, params, inst, backend="torch")  # differentiable, complex128 by default
 ```
 
 `params` is the packed form `(sld[B, N], thickness[B, N], roughness[B, N])` that every backend
@@ -237,10 +248,12 @@ accepts; `Stack` and `Instrument` are thin dataclasses that pack to it.
 ```python
 from reflectofit import metrics
 
-metrics.residuals(kind, lam, y, scale=None, sigma=None)   # kind: "log" | "raw" | "poisson" | "chi2"
-metrics.loss(kind, lam, y, mask=None, scale=None, sigma=None)   # sum of squared residuals over the mask
-metrics.deviance(lam, y)                                  # Poisson deviance, zero counts included
-metrics.information_criteria(deviance, k, n)              # -> (aic, bic)
+metrics.residuals(kind, lam, y, scale=None, sigma=None)  # kind: "log" | "raw" | "poisson" | "chi2"
+metrics.loss(
+    kind, lam, y, mask=None, scale=None, sigma=None
+)  # sum of squared residuals over the mask
+metrics.deviance(lam, y)  # Poisson deviance, zero counts included
+metrics.information_criteria(deviance, k, n)  # -> (aic, bic)
 ```
 
 `log`: log10 λ − log10 max(y, 0.5); `raw`: (λ − y)/S; `poisson`: sign(λ − y)·√(2[λ − y + y ln(y/λ)]);
@@ -254,7 +267,7 @@ log-gradient, hybrid) are kept as named losses for the staged refine port.
 from reflectofit import data
 
 curve = data.read(path, x="tth", wavelength=1.5406)  # -> Curve(q, y, sigma, meta); 2-3 column text
-curve = data.stitch([a, b, c], method="boundary")     # xrr_combine; "median" = xray_ooguy rule
+curve = data.stitch([a, b, c], method="boundary")  # xrr_combine; "median" = xray_ooguy rule
 train, held = data.block_split(q, n_blocks=8, held=(2, 6), q_min=tth2q(0.5))
 ```
 
@@ -266,14 +279,19 @@ synthetic test file; measured files are never committed (section 6).
 ```python
 from reflectofit import fit, estimate, select
 
-model = fit.Model(stack, inst, free={"film.thickness": (180, 300), "film.sld": (20, 80), "i0": (0.5, 2)})
-res = fit.lsq(model, curve, loss="poisson", max_nfev=200)       # scipy trf, Jacobian from the backend
+model = fit.Model(
+    stack, inst, free={"film.thickness": (180, 300), "film.sld": (20, 80), "i0": (0.5, 2)}
+)
+res = fit.lsq(model, curve, loss="poisson", max_nfev=200)  # scipy trf, Jacobian from the backend
 res = fit.de(model, curve, loss="log", popsize=40, maxiter=400)  # scipy differential_evolution
-post = fit.mcmc(model, curve, res, steps=20000)                  # emcee extra; reports tau and warns < 50 tau
-res = fit.staged(model, curve, preset="likelihood", counts_scale=S)  # ReflectoLearn refine port (X1c)
-res = fit.genx(model, curve)                                     # genx3 extra; checks against our forward model
+post = fit.mcmc(model, curve, res, steps=20000)  # emcee extra; reports tau and warns < 50 tau
+res = fit.staged(
+    model, curve, preset="likelihood", counts_scale=S
+)  # ReflectoLearn refine port (X1c)
+res = fit.genx(model, curve)  # genx3 extra; checks against our forward model
 best = select.layer_count(curve, candidates=[1, 2, 3], criterion="bic")
-estimate.critical_q(q, y); estimate.kiessig_thickness(q, y)      # port of fft_thickness
+estimate.critical_q(q, y)
+estimate.kiessig_thickness(q, y)  # port of fft_thickness
 ```
 
 `res` carries the parameters, the loss, the deviance, AIC/BIC, the covariance from the Jacobian, the
@@ -284,11 +302,23 @@ stopping reason and the settings; `res.to_json()` and `report.figure(res)` write
 ```python
 from reflectosim import priors, simulate, noise, dataset
 
-prior = priors.stack(n_layers=(1, 3), thickness=(20, 250), roughness_max_ratio=0.25,
-                     sld=(5, 80), min_contrast=4.0, template="film_on_oxide_on_si")
-inst = priors.instrument(sigma_q=(5e-4, 3e-3), tth_offset=(-0.01, 0.01), i0=(0.8, 1.2),
-                         log_background=(-8.5, -7.0), kalpha2_ratio=(0, 0.6), counts=(1e6, 1e8))
-batch = simulate(prior, inst, q, n=100_000, seed=(20261024, 1))   # truth params + R + counts
+prior = priors.stack(
+    n_layers=(1, 3),
+    thickness=(20, 250),
+    roughness_max_ratio=0.25,
+    sld=(5, 80),
+    min_contrast=4.0,
+    template="film_on_oxide_on_si",
+)
+inst = priors.instrument(
+    sigma_q=(5e-4, 3e-3),
+    tth_offset=(-0.01, 0.01),
+    i0=(0.8, 1.2),
+    log_background=(-8.5, -7.0),
+    kalpha2_ratio=(0, 0.6),
+    counts=(1e6, 1e8),
+)
+batch = simulate(prior, inst, q, n=100_000, seed=(20261024, 1))  # truth params + R + counts
 dataset.write("train.h5", batch, prior=prior, instrument=inst)
 ```
 

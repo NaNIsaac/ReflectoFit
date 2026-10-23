@@ -10,11 +10,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(1, sys.argv[1])
 
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
-from bench2 import q_grid, spec_structures  # noqa: E402
-from rl_abeles import abeles_core  # noqa: E402
-from structures import arrays  # noqa: E402
+import numpy as np
+import torch
+from bench2 import q_grid, spec_structures
+from rl_abeles import abeles_core
+from structures import arrays
 
 sld, d, sig = arrays(spec_structures()["single"])
 qq = torch.tensor(q_grid(), dtype=torch.complex128)[None, :, None]

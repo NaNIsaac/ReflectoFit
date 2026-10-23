@@ -1,0 +1,28 @@
+# A 240 Å film on native SiO2 on Si, as measured with a Cu Kα lab instrument.
+# Layers are listed from the top; SLD in 1e-6 Å^-2 as [real, imaginary]; lengths in Å.
+
+[instrument]
+wavelength = 1.5406
+i0 = 1.0
+background = 3e-8
+sigma_q = 5e-4
+sample_length = 10.0
+beam_sigma = 0.04
+
+[[layer]]
+name = "film"
+sld = [45.0, 1.5]
+thickness = 240.0
+roughness = 6.0
+
+[[layer]]
+name = "oxide"
+material = "SiO2"
+density = 2.20
+thickness = 12.0
+roughness = 3.0
+
+[substrate]
+material = "Si"
+density = 2.33
+roughness = 3.0

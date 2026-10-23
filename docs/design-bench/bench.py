@@ -18,7 +18,7 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(1, sys.argv[1])
 
-from structures import WAVELENGTH, arrays, parratt, q_grid, structures  # noqa: E402
+from structures import WAVELENGTH, arrays, parratt, q_grid, structures
 
 SCALE = int(os.environ.get("BENCH_SCALE", "1"))
 CASES = {"oxide_under": 1024 * SCALE, "superlattice": 256 * SCALE}
