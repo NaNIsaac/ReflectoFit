@@ -14,8 +14,10 @@ gradients.
 Fitting: least squares (optionally inside a trust window around the start), differential evolution,
 and losses on log R, raw R, Poisson deviance or χ², with AIC and BIC for the likelihood losses.
 The staged gradient fit of ReflectoLearn (`fit.staged`, torch): stages that each free some
-parameters and run Adam on one loss within their bounds, with an optional Occam penalty. MCMC and
-model selection follow.
+parameters and run Adam on one loss within their bounds, with an optional Occam penalty. Posterior
+sampling (`fit.mcmc`, extra `mcmc`): emcee with differential-evolution moves in coordinates
+whitened by the start fit's covariance, extended until the chain spans 50 autocorrelation times
+or a step limit, with a warning when it does not. Model selection follows.
 
 [ReflectoSim](https://github.com/NaNIsaac/ReflectoSim) builds synthetic training data on this
 forward model, so a network trained on it and a fit of the same measurement use the same physics.

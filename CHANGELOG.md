@@ -14,3 +14,5 @@
   kink leaves the integrand; real-SLD stacks no longer take up to 8001 nodes per point (#6).
 - Staged gradient fit (`fit.staged`, `reflectofit.staged`): the refine strategy of ReflectoLearn
   (stages, sigmoid bounds, Adam, its losses, Occam penalty) for any differentiable model.
+- Posterior sampling (`fit.mcmc`, extra `mcmc`): emcee, differential-evolution moves in whitened
+  coordinates, τ reported and the chain extended to 50 τ or a limit, with a warning short of it.

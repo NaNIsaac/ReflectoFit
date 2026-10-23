@@ -28,6 +28,7 @@ dependencies = [
 
 [project.optional-dependencies]
 torch = ["torch>=2.5"]
+mcmc = ["emcee>=3.1"]
 
 [project.scripts]
 reflectofit = "reflectofit.cli:main"
@@ -44,6 +45,7 @@ dev = [
     "refnx>=0.1.60",
     "jax>=0.4.30",
     "torch>=2.5",
+    "emcee>=3.1",
 ]
 
 # CPU torch wheels for this project's own lock (tests, CI); installs from PyPI are not affected.
