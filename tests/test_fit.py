@@ -11,7 +11,7 @@ from reflectofit.model import Model, dumps, load
 S = 1e8
 TRUTH = Model(
     Stack([Layer(45 + 1.5j, 240, 6, "film")], Layer(20.07 + 0.46j, roughness=3, name="substrate")),
-    Instrument(i0=1.0, background=2e-8, sigma_q=5e-4),
+    Instrument(i0=1.0, background=1e-7, sigma_q=5e-4),
     {
         "film.thickness": (150, 350),
         "film.roughness": (1, 15),
@@ -20,7 +20,7 @@ TRUTH = Model(
         "log10_background": (-10, -6),
     },
 )
-Q = tth_to_q(np.linspace(0.1, 6.0, 300))
+Q = tth_to_q(np.linspace(0.1, 9.0, 400))
 
 
 def _data(seed=3) -> Curve:
@@ -45,6 +45,7 @@ def test_lsq_poisson_recovers_the_truth_within_its_errors():
     truth = dict(zip(TRUTH.names, TRUTH.start(), strict=True))
     for k, v in res.values.items():
         assert abs(v - truth[k]) < 4 * res.errors[k], k
+    assert res.at_bound == []
     assert res.objective < 1.3 * Q.size
     assert np.isfinite(res.bic)
 
@@ -106,3 +107,9 @@ def test_material_layers_in_toml(tmp_path):
 def test_unknown_parameter_is_rejected():
     with pytest.raises(ValueError, match="unknown parameter"):
         Model(TRUTH.stack, free={"flim.thickness": (1, 2)})
+
+
+def test_a_parameter_pinned_on_its_bound_is_reported():
+    pinned = Model(TRUTH.stack, TRUTH.instrument, TRUTH.free | {"film.thickness": (150, 230)})
+    res = lsq(pinned, _data(), loss="poisson", counts_scale=S)
+    assert res.at_bound == ["film.thickness"]

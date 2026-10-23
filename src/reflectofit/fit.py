@@ -32,6 +32,8 @@ class FitResult:
     method: str
     settings: dict = field(default_factory=dict)
     covariance: NDArray | None = None
+    at_bound: list[str] = field(default_factory=list)
+    """Parameters that ended on a bound; their errors from the Jacobian are not meaningful."""
 
     def to_json(self) -> str:
         d = asdict(self) | {
@@ -60,7 +62,11 @@ def _setup(model: Model, curve: Curve, loss: str, counts_scale: float | None, ma
     return q, resid
 
 
-def _result(model, theta, r, jac, loss, n, success, message, nfev, method, settings):
+def _result(model, theta, r, jac, loss, n, success, message, nfev, method, settings, bounds):
+    lo, hi = bounds
+    tol = 1e-6 * (hi - lo)
+    on_bound = (theta - lo <= tol) | (hi - theta <= tol)
+    at_bound = [name for name, b in zip(model.names, on_bound, strict=True) if b]
     k = theta.size
     objective = float(np.sum(r**2))
     # AIC and BIC need a likelihood: the Poisson deviance or chi2; nan for the log and raw losses
@@ -94,6 +100,7 @@ def _result(model, theta, r, jac, loss, n, success, message, nfev, method, setti
         method=method,
         settings=settings,
         covariance=cov,
+        at_bound=at_bound,
     )
 
 
@@ -156,6 +163,7 @@ def lsq(
         res.nfev,
         "lsq",
         settings,
+        (lo, hi),
     )
 
 
@@ -204,6 +212,7 @@ def de(
         res.nfev,
         "de",
         settings,
+        (lo, hi),
     )
     if not polish:
         return out

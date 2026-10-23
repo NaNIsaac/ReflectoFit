@@ -53,6 +53,8 @@ def _fit(args) -> int:
     width = max(len(k) for k in res.values)
     for k, v in res.values.items():
         print(f"{k:<{width}}  {v:.6g} ± {res.errors[k]:.2g}")
+    if res.at_bound:
+        print(f"on a bound (errors not meaningful): {', '.join(res.at_bound)}")
     print(f"{res.loss} objective {res.objective:.6g} over {res.n_points} points; {res.message}")
     print(f"wrote {out / 'result.json'}, {out / 'model.toml'}, {out / 'fitted.dat'}")
     return 0 if res.success else 2
