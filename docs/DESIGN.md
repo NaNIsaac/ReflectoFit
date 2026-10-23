@@ -1,7 +1,8 @@
 # Design: an XRR fitter and an XRR simulator
 
-Status: design for review (BACKLOG X1a). Nothing here is implemented. `xrrkit` is a temporary
-repository name; section 0 proposes the real names, and the repository owner decides and renames.
+Status: design for review (BACKLOG X1a). Nothing here is implemented. Names decided 2026-10-24
+(NaNIsaac DECISIONS #23): the fitter is **ReflectoFit** (this repository, formerly the temporary
+`xrrkit`), the simulator is **ReflectoSim** (repository created with the simulator's first PR).
 
 Labels: **[fact]** is read from code or measured here (script and output in `docs/design-bench/`),
 **[inference]** is a reasoned conclusion that has not been tested, **[proposal]** is a design choice
@@ -98,12 +99,15 @@ Rejected: `xrrkit`, `xrrsim`, `xrrsynth`, `xrrfit` (xrr prefix, confusable with 
 `reflectogen` ("gen" reads as GenX, whose port lives in the fitter); `reflex*` (ReflexAuto and several
 unrelated projects).
 
-**[proposal] reflectofit and reflectosim.** Same family, each name says the job, the pair makes the
+Proposed: reflectofit and reflectosim. Same family, each name says the job, the pair makes the
 dependency obvious, both free on PyPI and GitHub. If the fitter should stand as a brand outside the
 organisation, Kiessig is the proper-noun alternative. Reflecto (the existing CNN + GenX app) keeps its
-name; once reflectofit exists its README points there for fitting.
+name; once ReflectoFit exists its README points there for fitting.
 
-Below, `reflectofit` and `reflectosim` stand for whatever names are chosen.
+**Decided (DECISIONS #23):** repositories `NaNIsaac/ReflectoFit` and `NaNIsaac/ReflectoSim`, matching
+ReflectoLearn and ReflectoExp. Distribution and import names are lowercase, as `reflectolearn`:
+`reflectofit` and `reflectosim` on PyPI, `import reflectofit`, `import reflectosim`, commands
+`reflectofit` and `reflectosim`.
 
 ### 0.4 Distribution
 
@@ -365,10 +369,10 @@ is far below counting noise except in minima with few counts; physics lane to co
 record). ReflectoLearn's shipped engine differs by float32 rounding and the guard, not by algorithm.
 
 Consequence for X1b's acceptance test ("matches ReflectoLearn physics and XRefine Abeles to 1e-6"):
-it cannot hold against the shipped complex64 engines. **[proposal]** Test the new kernels against the
-float64 Parratt and refnx at 1e-10 relative, against ReflectoLearn's kernel run in complex128 at
-1e-10, and against the shipped complex64 engines at the measured float32 level (max relative 1e-2,
-median 1e-4), stated as such.
+it cannot hold against the shipped complex64 engines. **Adopted (BACKLOG X1b, 2026-10-24):** the new
+kernels are tested against the float64 Parratt and refnx at 1e-10 relative, against ReflectoLearn's
+kernel run in complex128 at 1e-10, and against the shipped complex64 engines at the measured float32
+level (max relative 1e-2, median 1e-4), stated as such.
 
 A side finding from writing the Rust kernel: computing Im √z as √((|z| − Re z)/2) loses all digits
 when Im z is small (here 5e-8 relative error at high q); the stable form is Im z / (2 Re √z). Every
@@ -448,8 +452,8 @@ are skipped in CI when the path is missing. No credentials or personal data appe
 ## 7. Plan
 
 1. X1a (this): design; physics review (conventions, section 5), xrr-policy review (API sufficiency).
-2. Names decided and repositories set up by the owner (rename `xrrkit` to the fitter's name; create the
-   simulator's repository).
+2. Names decided (DECISIONS #23); `xrrkit` renamed to ReflectoFit. ReflectoSim is created with its
+   first PR.
 3. X1b: fitter core (`forward` numba + torch, `Stack`, `Instrument`, `materials`, `metrics`, `data`,
    `estimate`), simulator (`priors`, `simulate`, `noise`, `dataset`), CLI `sim` and `score`, tests per
    section 5.1, README with tested first-run blocks, CI from the shared workflows, quiet re-measurement.
