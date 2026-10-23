@@ -81,3 +81,20 @@ Reference and criteria as in the first registration: max relative error ≤ 1e-4
 is not reference-limited, including points that stopped at the depth limit (the flag does not
 excuse them); ReflectoLearn's distribution, batch 64 × 2000, ≤ 1 s and ≤ 2 GB with numba in a quiet
 window; the existing tests keep their tolerances. Falsified on any breach; thresholds not moved.
+
+## Third registration (before confirmation grid 2 is run)
+
+Two changes to the code after the second registration, found by the test suite, before any run of
+confirmation grid 2:
+
+- The refinement criterion is applied to Kα₁ and Kα₂ each on its own (each line's panel against
+  its halves, relative to that line's integral over the range), not to their mix. Reason: the
+  intensity ratio can be a traced value (`torch.func.vmap`), so node choice must not depend on it;
+  the mix is a convex combination of the two lines, so bounding each bounds the mix. This changes
+  the nodes for curves with Kα₂, so it is a change to the rule.
+- `REFINE_TOL = inf` switches the refinement off (used only by a regression test); the default is
+  unchanged.
+
+The rule as committed in 75c7b1c is the one under test. Development data now includes the rerun of
+grid 1 with this rule (`dev1_accuracy.json`, worst 1.7e-5). Confirmation grid 2 and the criteria
+are those of the second registration, unchanged; grid 2 has not been run.
