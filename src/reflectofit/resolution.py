@@ -61,6 +61,8 @@ REFINE_TOL = 1e-5
 """Relative tolerance of the refinement between the critical q; inf switches the refinement off."""
 MAX_DEPTH = 12
 """Halvings of a panel at most."""
+LEAF_ROOM = 4
+"""Leaves kept per refined panel (and one more) between the two passes; only speed depends on it."""
 
 
 class Edges(NamedTuple):
@@ -205,97 +207,222 @@ def _panel(s0, s1, a, b, left, right, qv, sv, c, rho, thickness, roughness, wl1,
     return acc1, acc2
 
 
+@numba.njit(cache=True)
+def _emit(s0, s1, halves, a, b, left, right, sg, wg, u, w, pos):
+    """Write the nodes of panel [s0, s1] of a piece, as `halves` equal parts, at pos; returns the
+    next position."""
+    for h in range(halves):
+        h0 = s0 + (s1 - s0) * h / halves
+        h1 = s0 + (s1 - s0) * (h + 1) / halves
+        for g in range(sg.size):
+            x, d = _map(h0 + (h1 - h0) * sg[g], a, b, left, right)
+            u[pos] = x
+            w[pos] = wg[g] * (h1 - h0) * d * np.exp(-0.5 * x * x)
+            pos += 1
+    return pos
+
+
 @numba.njit(parallel=True, cache=True)
-def _nodes(
+def _refine(
     q, sigma, lo, hi, le, re, bt, panels, rho, thickness, roughness, wl1, wl2, tol, max_depth,
-    sg, wg, starts, u, w, counts, err, capped, fill,
+    sg, wg, lstart, leaf0, leaf1, leafp, nleaf, counts, err, capped,
 ):  # fmt: skip
-    """Nodes of every point: uniform panels in s, and in the pieces between the critical q,
-    panels split while a panel and its two halves differ by more than tol of the point's
-    integral over those pieces (each wavelength on its own). With fill False only counts (B·Q,)
-    are written; with fill True u and w from starts, and err (estimated relative error) and capped
-    (stopped at max_depth)."""
+    """First pass: the nodes per point, and for the pieces between the critical q, panels split
+    while a panel and its two halves differ by more than tol of the point's integral over those
+    pieces (each wavelength on its own). Every tested panel's value is reused: an initial panel's
+    whole is its share of the reference integral, a half becomes its child's whole. The leaves are
+    kept (lstart gives each point's room; nleaf is −1 where it did not suffice) so that `_fill`
+    writes the nodes without evaluating R again; err and capped as in the module docstring."""
     n_t, m = panels.shape
     n_q = q.shape[1]
     k_nodes = sg.size
     for t in numba.prange(n_t):
         c, i = t // n_q, t % n_q
         qv, sv = q[c, i], sigma[c, i]
+        n_init = 0
+        if tol < np.inf:
+            for p in range(m):
+                if bt[t, p]:
+                    n_init += panels[t, p]
+        init1 = np.empty(n_init)
+        init2 = np.empty(n_init)
         ref1 = 0.0
         ref2 = 0.0
+        j = 0
         for p in range(m):
             if bt[t, p] and tol < np.inf:
                 for k in range(panels[t, p]):
                     v1, v2 = _panel(k / panels[t, p], (k + 1) / panels[t, p], lo[t, p], hi[t, p],
                                     le[t, p], re[t, p], qv, sv, c, rho, thickness, roughness, wl1,
                                     wl2, sg, wg)  # fmt: skip
+                    init1[j], init2[j] = v1, v2
                     ref1 += v1
                     ref2 += v2
-        pos = starts[t] if fill else 0
+                    j += 1
         n_out = 0
         est1 = 0.0
         est2 = 0.0
         hit = False
-        stack0 = np.empty(2 * max_depth + 4)
-        stack1 = np.empty(2 * max_depth + 4)
-        stackd = np.empty(2 * max_depth + 4, np.int64)
+        room = lstart[t + 1] - lstart[t]
+        kept = 0
+        overflow = False
+        size = 2 * max_depth + 4
+        stack0 = np.empty(size)
+        stack1 = np.empty(size)
+        stackd = np.empty(size, np.int64)
+        stackw1 = np.empty(size)
+        stackw2 = np.empty(size)
+        j = 0
         for p in range(m):
             a, b, left, right = lo[t, p], hi[t, p], le[t, p], re[t, p]
+            tested = bt[t, p] and ref1 > 0 and tol < np.inf
             for k in range(panels[t, p]):
+                if not tested:
+                    n_out += k_nodes
+                    if bt[t, p] and tol < np.inf:
+                        j += 1
+                    continue
                 stack0[0], stack1[0], stackd[0] = k / panels[t, p], (k + 1) / panels[t, p], 0
+                stackw1[0], stackw2[0] = init1[j], init2[j]
+                j += 1
                 top = 1
                 while top > 0:
                     top -= 1
                     s0, s1, dep = stack0[top], stack1[top], stackd[top]
-                    split = False
-                    halves = 1
-                    if bt[t, p] and ref1 > 0 and tol < np.inf:
-                        sm = 0.5 * (s0 + s1)
-                        w1, w2 = _panel(s0, s1, a, b, left, right, qv, sv, c, rho, thickness,
-                                        roughness, wl1, wl2, sg, wg)  # fmt: skip
-                        l1, l2 = _panel(s0, sm, a, b, left, right, qv, sv, c, rho, thickness,
-                                        roughness, wl1, wl2, sg, wg)  # fmt: skip
-                        r1, r2 = _panel(sm, s1, a, b, left, right, qv, sv, c, rho, thickness,
-                                        roughness, wl1, wl2, sg, wg)  # fmt: skip
-                        e1, e2 = abs(w1 - l1 - r1), abs(w2 - l2 - r2)
-                        over = e1 > tol * ref1 or (ref2 > 0 and e2 > tol * ref2)
-                        if over and dep < max_depth:
-                            split = True
-                        else:
-                            est1 += e1
-                            est2 += e2
-                            hit = hit or over
-                            halves = 2
-                    if split:
-                        stack0[top], stack1[top], stackd[top] = s0, 0.5 * (s0 + s1), dep + 1
-                        stack0[top + 1], stack1[top + 1], stackd[top + 1] = (
-                            0.5 * (s0 + s1),
-                            s1,
-                            dep + 1,
-                        )
+                    w1, w2 = stackw1[top], stackw2[top]
+                    sm = 0.5 * (s0 + s1)
+                    l1, l2 = _panel(s0, sm, a, b, left, right, qv, sv, c, rho, thickness,
+                                    roughness, wl1, wl2, sg, wg)  # fmt: skip
+                    r1, r2 = _panel(sm, s1, a, b, left, right, qv, sv, c, rho, thickness,
+                                    roughness, wl1, wl2, sg, wg)  # fmt: skip
+                    e1, e2 = abs(w1 - l1 - r1), abs(w2 - l2 - r2)
+                    over = e1 > tol * ref1 or (ref2 > 0 and e2 > tol * ref2)
+                    if over and dep < max_depth:
+                        stack0[top], stack1[top], stackd[top] = s0, sm, dep + 1
+                        stackw1[top], stackw2[top] = l1, l2
+                        stack0[top + 1], stack1[top + 1], stackd[top + 1] = sm, s1, dep + 1
+                        stackw1[top + 1], stackw2[top + 1] = r1, r2
                         top += 2
                         continue
-                    # emit the panel (as its two halves where it was tested)
-                    for h in range(halves):
-                        h0 = s0 + (s1 - s0) * h / halves
-                        h1 = s0 + (s1 - s0) * (h + 1) / halves
-                        for g in range(k_nodes):
-                            if fill:
-                                x, d = _map(h0 + (h1 - h0) * sg[g], a, b, left, right)
-                                u[pos] = x
-                                w[pos] = wg[g] * (h1 - h0) * d * np.exp(-0.5 * x * x)
-                                pos += 1
-                            n_out += 1
-        if fill:
-            norm = w[starts[t] : pos].sum()
-            w[starts[t] : pos] /= norm
-            e = est1 / ref1 if ref1 > 0 else 0.0
-            if ref2 > 0:
-                e = max(e, est2 / ref2)
-            err[t] = e
-            capped[t] = hit
+                    est1 += e1
+                    est2 += e2
+                    hit = hit or over
+                    n_out += 2 * k_nodes
+                    if kept < room:
+                        leaf0[lstart[t] + kept] = s0
+                        leaf1[lstart[t] + kept] = s1
+                        leafp[lstart[t] + kept] = p
+                    else:
+                        overflow = True
+                    kept += 1
+        counts[t] = n_out
+        nleaf[t] = -1 if overflow else kept
+        e = est1 / ref1 if ref1 > 0 else 0.0
+        if ref2 > 0:
+            e = max(e, est2 / ref2)
+        err[t] = e
+        capped[t] = hit
+
+
+@numba.njit(parallel=True, cache=True)
+def _fill(
+    q, sigma, lo, hi, le, re, bt, panels, rho, thickness, roughness, wl1, wl2, tol, max_depth,
+    sg, wg, lstart, leaf0, leaf1, leafp, nleaf, starts, u, w,
+):  # fmt: skip
+    """Second pass: write the nodes of every point from starts, untested panels whole and every
+    kept leaf as its two halves. A point whose leaves did not fit is refined again (`_replay`)."""
+    n_t, m = panels.shape
+    for t in numba.prange(n_t):
+        pos = starts[t]
+        if nleaf[t] < 0:
+            pos = _replay(t, q, sigma, lo, hi, le, re, bt, panels, rho, thickness, roughness, wl1,
+                          wl2, tol, max_depth, sg, wg, u, w, pos)  # fmt: skip
         else:
-            counts[t] = n_out
+            kept = lstart[t]
+            for p in range(m):
+                a, b, left, right = lo[t, p], hi[t, p], le[t, p], re[t, p]
+                tested = kept < lstart[t] + nleaf[t] and leafp[kept] == p
+                if not tested:
+                    for k in range(panels[t, p]):
+                        pos = _emit(k / panels[t, p], (k + 1) / panels[t, p], 1, a, b, left,
+                                    right, sg, wg, u, w, pos)  # fmt: skip
+                    continue
+                while kept < lstart[t] + nleaf[t] and leafp[kept] == p:
+                    pos = _emit(leaf0[kept], leaf1[kept], 2, a, b, left, right, sg, wg, u, w, pos)
+                    kept += 1
+        norm = w[starts[t] : pos].sum()
+        w[starts[t] : pos] /= norm
+
+
+@numba.njit(cache=True)
+def _replay(t, q, sigma, lo, hi, le, re, bt, panels, rho, thickness, roughness, wl1, wl2, tol,
+            max_depth, sg, wg, u, w, pos):  # fmt: skip
+    """The refinement of `_refine` for one point, writing the nodes as it goes."""
+    m = panels.shape[1]
+    n_q = q.shape[1]
+    c, i = t // n_q, t % n_q
+    qv, sv = q[c, i], sigma[c, i]
+    n_init = 0
+    for p in range(m):
+        if bt[t, p] and tol < np.inf:
+            n_init += panels[t, p]
+    init1 = np.empty(n_init)
+    init2 = np.empty(n_init)
+    ref1 = 0.0
+    ref2 = 0.0
+    j = 0
+    for p in range(m):
+        if bt[t, p] and tol < np.inf:
+            for k in range(panels[t, p]):
+                v1, v2 = _panel(k / panels[t, p], (k + 1) / panels[t, p], lo[t, p], hi[t, p],
+                                le[t, p], re[t, p], qv, sv, c, rho, thickness, roughness, wl1,
+                                wl2, sg, wg)  # fmt: skip
+                init1[j], init2[j] = v1, v2
+                ref1 += v1
+                ref2 += v2
+                j += 1
+    size = 2 * max_depth + 4
+    stack0 = np.empty(size)
+    stack1 = np.empty(size)
+    stackd = np.empty(size, np.int64)
+    stackw1 = np.empty(size)
+    stackw2 = np.empty(size)
+    j = 0
+    for p in range(m):
+        a, b, left, right = lo[t, p], hi[t, p], le[t, p], re[t, p]
+        tested = bt[t, p] and ref1 > 0 and tol < np.inf
+        for k in range(panels[t, p]):
+            if not tested:
+                pos = _emit(k / panels[t, p], (k + 1) / panels[t, p], 1, a, b, left, right, sg,
+                            wg, u, w, pos)  # fmt: skip
+                if bt[t, p]:
+                    j += 1
+                continue
+            stack0[0], stack1[0], stackd[0] = k / panels[t, p], (k + 1) / panels[t, p], 0
+            stackw1[0], stackw2[0] = init1[j], init2[j]
+            j += 1
+            top = 1
+            while top > 0:
+                top -= 1
+                s0, s1, dep = stack0[top], stack1[top], stackd[top]
+                w1, w2 = stackw1[top], stackw2[top]
+                sm = 0.5 * (s0 + s1)
+                l1, l2 = _panel(s0, sm, a, b, left, right, qv, sv, c, rho, thickness, roughness,
+                                wl1, wl2, sg, wg)  # fmt: skip
+                r1, r2 = _panel(sm, s1, a, b, left, right, qv, sv, c, rho, thickness, roughness,
+                                wl1, wl2, sg, wg)  # fmt: skip
+                over = abs(w1 - l1 - r1) > tol * ref1 or (
+                    ref2 > 0 and abs(w2 - l2 - r2) > tol * ref2
+                )
+                if over and dep < max_depth:
+                    stack0[top], stack1[top], stackd[top] = s0, sm, dep + 1
+                    stackw1[top], stackw2[top] = l1, l2
+                    stack0[top + 1], stack1[top + 1], stackd[top + 1] = sm, s1, dep + 1
+                    stackw1[top + 1], stackw2[top + 1] = r1, r2
+                    top += 2
+                    continue
+                pos = _emit(s0, s1, 2, a, b, left, right, sg, wg, u, w, pos)
+    return pos
 
 
 def layout(
@@ -347,12 +474,18 @@ def layout(
     counts = np.zeros(n_t, np.int64)
     err = np.zeros(n_t)
     capped = np.zeros(n_t, np.bool_)
+    # room for the leaves of the refined panels; a point that needs more is refined again in _fill
+    room = LEAF_ROOM * ((panels * bt).sum(axis=1) + 1)
+    lstart = np.concatenate([[0], np.cumsum(room)])
+    leaf0, leaf1 = np.empty(lstart[-1]), np.empty(lstart[-1])
+    leafp = np.empty(lstart[-1], np.int64)
+    nleaf = np.zeros(n_t, np.int64)
     args = (q, sigma, lo, hi, le, re, bt, panels, rho, np.ascontiguousarray(thickness, float),
             np.ascontiguousarray(roughness, float), float(wavelength),
             float(kalpha2_wavelength) if ka2 is not None else 0.0, REFINE_TOL, MAX_DEPTH,
-            sg, wg)  # fmt: skip
-    _nodes(*args, np.zeros(1, np.int64), np.empty(0), np.empty(0), counts, err, capped, False)
+            sg, wg, lstart, leaf0, leaf1, leafp, nleaf)  # fmt: skip
+    _refine(*args, counts, err, capped)
     starts = np.concatenate([[0], np.cumsum(counts)])
     u, w = np.empty(starts[-1]), np.empty(starts[-1])
-    _nodes(*args, starts, u, w, counts, err, capped, True)
+    _fill(*args, starts, u, w)
     return counts, u, w, err, capped

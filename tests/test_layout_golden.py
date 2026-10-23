@@ -40,3 +40,9 @@ def test_layout_is_bit_identical_to_the_registered_rule(k):
     got = resolution.layout(q[None], np.full((1, q.size), sigma), packed, 1.5406, wl2)
     for key, value in zip(("counts", "u", "w", "err", "capped"), got, strict=True):
         assert np.array_equal(value, GOLDEN[f"{k}_{key}"]), key
+
+
+@pytest.mark.parametrize("k", range(4))
+def test_points_refined_again_give_the_same_layout(monkeypatch, k):
+    monkeypatch.setattr(resolution, "LEAF_ROOM", 0)  # no leaf is kept: every refined point replays
+    test_layout_is_bit_identical_to_the_registered_rule(k)
