@@ -11,8 +11,8 @@ with Névot-Croce roughness, Gaussian resolution, beam footprint, Cu Kα₂ and 
 with refnx to 1e-10. A torch backend gives the same curves with gradients. The companion simulator,
 ReflectoSim, generates synthetic XRR data for machine learning on top of this forward model.
 
-Status: early development. The design is in [`docs/DESIGN.md`](docs/DESIGN.md); MCMC, staged
-refinement and model selection follow.
+Status: early development. The design is in [`docs/DESIGN.md`](docs/DESIGN.md); MCMC and model
+selection follow.
 
 ## Install
 

@@ -10,3 +10,5 @@
   reading, stitching, held-out splits, critical edge and Kiessig thickness estimators.
 - Least squares in a trust window and differential evolution; command line `calc`, `fit`,
   `score`, `stitch`.
+- Staged gradient fit (`fit.staged`, `reflectofit.staged`): the refine strategy of ReflectoLearn
+  (stages, sigmoid bounds, Adam, its losses, Occam penalty) for any differentiable model.

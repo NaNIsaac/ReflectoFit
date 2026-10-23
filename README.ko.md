@@ -6,7 +6,7 @@
 
 박막의 specular XRR 곡선을 측정했고 각 층의 두께, 거칠기, 밀도를 얻고 싶은 사람을 위한 도구다. 순방향 모델은 float64 Parratt 재귀(numba 컴파일)에 Névot-Croce 거칠기, 가우시안 분해능, 빔 footprint, Cu Kα₂, 2θ offset을 더한 것이고 refnx와 1e-10 안에서 일치한다. torch backend는 같은 곡선을 gradient와 함께 준다. 짝이 되는 시뮬레이터 ReflectoSim은 이 순방향 모델 위에서 기계학습용 합성 XRR 데이터를 만든다.
 
-상태: 초기 개발 단계. 설계는 [`docs/DESIGN.md`](docs/DESIGN.md)에 있고, MCMC, 단계별 refine, 모델 선택은 뒤에 들어온다.
+상태: 초기 개발 단계. 설계는 [`docs/DESIGN.md`](docs/DESIGN.md)에 있고, MCMC와 모델 선택은 뒤에 들어온다.
 
 ## 설치
 

@@ -228,6 +228,69 @@ def de(
     return polished
 
 
+def staged(
+    model: Model,
+    curve: Curve,
+    stages,
+    counts_scale: float | None = None,
+    mask=None,
+    penalty: dict[str, float] | None = None,
+    penalty_weight: float = 0.0,
+) -> FitResult:
+    """Staged gradient fit (`reflectofit.staged`, needs torch): each stage frees some of the
+    model's parameters and runs Adam on one loss within the model's bounds. The result's objective
+    is the Poisson deviance with counts_scale, else the log residual sum; it has no covariance."""
+    import torch
+
+    from reflectofit import staged as st
+
+    if not model.free:
+        raise ValueError("the model has no free parameters")
+    kind = "poisson" if counts_scale is not None else "log"
+    q, resid = _setup(model, curve, kind, counts_scale, mask)
+    keep = np.ones(curve.q.size, bool) if mask is None else np.asarray(mask, bool)
+    with np.errstate(divide="ignore"):
+        log_y = np.log10(curve.y[keep] / (1.0 if counts_scale is None else counts_scale))
+    lo, hi = model.bounds
+    params = {
+        k: st.Param(float(x), float(a), float(b))
+        for k, x, a, b in zip(model.names, model.start(), lo, hi, strict=True)
+    }
+    fit = st.StagedFit(
+        st.model_simulate(model, q),
+        params,
+        torch.as_tensor(log_y[None], dtype=torch.float64),
+        q=torch.as_tensor(q, dtype=torch.float64),
+        counts_scale=counts_scale,
+        penalty=penalty,
+        penalty_weight=penalty_weight,
+    )
+    for stage in stages:
+        fit.run(stage)
+    theta = np.array([fit.state[k].item() for k in model.names])
+    settings = {
+        "stages": [asdict(s) for s in stages],
+        "counts_scale": counts_scale,
+        "penalty": penalty,
+        "penalty_weight": penalty_weight,
+    }
+    steps = sum(s.steps for s in stages)
+    return _result(
+        model,
+        theta,
+        resid(theta)[0],
+        None,
+        kind,
+        q.size,
+        True,
+        "stages done",
+        steps,
+        "staged",
+        settings,
+        (lo, hi),
+    )
+
+
 def score(model: Model, curve: Curve, counts_scale: float | None = None, mask=None) -> dict:
     """Every loss kind that the data allow, and AIC/BIC with the model's free-parameter count."""
     out = {}

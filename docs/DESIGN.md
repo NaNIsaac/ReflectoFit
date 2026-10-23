@@ -285,9 +285,7 @@ model = fit.Model(
 res = fit.lsq(model, curve, loss="poisson", max_nfev=200)  # scipy trf, Jacobian from the backend
 res = fit.de(model, curve, loss="log", popsize=40, maxiter=400)  # scipy differential_evolution
 post = fit.mcmc(model, curve, res, steps=20000)  # emcee extra; reports tau and warns < 50 tau
-res = fit.staged(
-    model, curve, preset="likelihood", counts_scale=S
-)  # ReflectoLearn refine port (X1c)
+res = fit.staged(model, curve, stages, counts_scale=S)  # ReflectoLearn refine strategy (X1c)
 res = fit.genx(model, curve)  # genx3 extra; checks against our forward model
 best = select.layer_count(curve, candidates=[1, 2, 3], criterion="bic")
 estimate.critical_q(q, y)
