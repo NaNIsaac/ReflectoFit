@@ -47,3 +47,37 @@ reference-limited rather than counted.
 Falsified if any confirmation case exceeds 1e-4 at a point that is not reference-limited, or the
 numba cost exceeds 1 s or 2 GB. A falsified criterion is reported as such and the thresholds are
 not moved.
+
+## Result of the first registration (252cc2f)
+
+Falsified (`confirm_accuracy.json`, f207fd5): the real 20-period superlattice was off by up to
+2.7e-2 (σ_q 5e-4), 1.3e-2 (dq/q 0.02) and 9.7e-4 (σ_q 2e-3), all near q = 0.048, between the edges
+of its two materials and more than 5 σ from either. Every other case held (ReflectoLearn
+distribution ≤ 1.2e-6, the other real-SLD stacks and the absorbing cases ≤ 2.4e-6). Inference, not
+tested: resonant tunnelling through the evanescent layers gives narrow features whose width is set
+by the barriers, not by absorption, and the resonance rule covered absorbing media only.
+
+## Second registration (written before the change below is run)
+
+Change: inside the range between the lowest and highest critical q, each panel is compared with
+its two halves (16 Gauss–Legendre nodes each) and split while the difference exceeds 1e-5 of the
+point's integral over that range (R ≥ 0, so this bounds the point's relative error), up to a depth
+limit. A point that stops at the limit carries its estimated error, `forward` warns, and
+`resolution_report` returns the estimate and the flag per point. Everything else stays as above.
+
+Development grid, now including the first confirmation grid (with the 20-period superlattice).
+
+Confirmation grid 2 (`confirm.py --grid 2`, nothing tuned on it):
+
+- ReflectoLearn's default distribution at a new seed, 20261026: 16 curves, σ_q drawn, at 1e-4 and
+  at 6e-3.
+- New real-SLD multilayers on Si 20.07, each at σ_q 1e-4, 5e-4, 2e-3 and dq/q 0.02 on 600 points
+  from q = 0.01 to 0.2 Å⁻¹: a 10-period superlattice 15 / 40 Å and 45 / 30 Å; a 40-period
+  superlattice 25 / 20 Å and 60 / 20 Å; a triple waveguide 40 / 50 Å, 10 / 200 Å, 40 / 50 Å,
+  10 / 200 Å, 40 / 50 Å; a graded stack of 10 layers, 20 Å each, SLD 10 to 60 in equal steps.
+- The absorbing cases of `tests/test_review_physics.py`, unchanged.
+
+Reference and criteria as in the first registration: max relative error ≤ 1e-4 at every point that
+is not reference-limited, including points that stopped at the depth limit (the flag does not
+excuse them); ReflectoLearn's distribution, batch 64 × 2000, ≤ 1 s and ≤ 2 GB with numba in a quiet
+window; the existing tests keep their tolerances. Falsified on any breach; thresholds not moved.
