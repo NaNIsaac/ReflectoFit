@@ -21,8 +21,8 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(1, sys.argv[1])
 
-from bench import ENGINES  # noqa: E402
-from structures import SI, SIO2, WAVELENGTH, arrays  # noqa: E402
+from bench import ENGINES
+from structures import SI, SIO2, WAVELENGTH, arrays
 
 NQ = 500
 BATCHES = (1, 1_000, 100_000)
