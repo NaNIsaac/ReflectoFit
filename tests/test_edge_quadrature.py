@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from reflectofit import Instrument, Layer, Stack, forward, resolution
+from reflectofit.forward import resolution_report
 
 Q = np.linspace(0.01, 0.12, 300)
 
@@ -25,6 +26,11 @@ CASES = {
     "bare Si, real": Stack([], Layer(20.07)),
     "dense film on real Si": Stack([Layer(60.0, 800, 5)], Layer(20.0, roughness=3)),
     "real waveguide": Stack([Layer(25.0, 30, 3), Layer(5.0, 300, 3)], Layer(20.0, roughness=3)),
+    # the case that falsified the first rule (docs/design-bench/x1e, f207fd5): narrow features
+    # between the edges of a non-absorbing superlattice
+    "real superlattice": Stack(
+        [Layer(30.0, 25, 3), Layer(55.0, 35, 3.5)] * 20, Layer(20.07, roughness=3)
+    ),
 }
 
 
@@ -37,10 +43,21 @@ def test_real_sld_edges_within_1e_4(name, sigma_q):
 
 
 def test_node_count_is_bounded_on_real_slds():
-    stack = CASES["dense film on real Si"]
-    e = resolution.edges(*stack.packed()[:2], kalpha2_scale=1.0025)
-    counts, _, _ = resolution.layout(Q, np.full(Q.size, 1e-4), [e])
-    assert counts.max() <= 16 * resolution.PANEL  # was up to 8001 (ReflectoFit#6)
+    rep = resolution_report(
+        Q, CASES["dense film on real Si"], Instrument(sigma_q=1e-4, kalpha2_ratio=0.3)
+    )
+    assert rep["nodes"].max() <= 32 * resolution.PANEL  # was up to 8001 (ReflectoFit#6)
+    assert not rep["capped"].any()
+
+
+def test_a_point_at_the_depth_limit_is_reported(monkeypatch):
+    monkeypatch.setattr(resolution, "MAX_DEPTH", 0)
+    inst = Instrument(sigma_q=5e-4)
+    with pytest.warns(RuntimeWarning, match="MAX_DEPTH"):
+        forward(Q, CASES["real superlattice"], inst)
+    rep = resolution_report(Q, CASES["real superlattice"], inst)
+    assert rep["capped"].any()
+    assert (rep["error"][rep["capped"]] > resolution.REFINE_TOL).all()
 
 
 def test_torch_backend_on_the_same_nodes():

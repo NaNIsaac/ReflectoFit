@@ -1,7 +1,9 @@
-"""X1e confirmation grid (README.md in this folder; nothing here was tuned).
+"""X1e confirmation grids (README.md in this folder; nothing here was tuned on its own grid).
 
-Usage: uv run python docs/design-bench/x1e/confirm.py --accuracy | --cost [--torch]
-Writes confirm_accuracy.json or confirm_cost.json next to this file.
+Usage: uv run python docs/design-bench/x1e/confirm.py [--grid 2] --accuracy | --cost [--torch]
+Grid 1 (the first registration, 252cc2f) was recorded in confirm_accuracy.json (f207fd5); it is now
+development data and writes dev1_*.json;
+grid 2 (the second, b6fd1fb) writes confirm2_accuracy.json and confirm2_cost_*.json.
 """
 
 import json
@@ -13,9 +15,12 @@ import numpy as np
 from rl_distribution import WL, draw
 
 from reflectofit import Instrument, Layer, Stack, forward, resolution, tth_to_q
+from reflectofit.forward import resolution_report
 
 HERE = Path(__file__).parent
-SEED = 20261025
+GRID = 2 if "--grid" in sys.argv and sys.argv[sys.argv.index("--grid") + 1] == "2" else 1
+SEED = {1: 20261025, 2: 20261026}[GRID]
+PREFIX = {1: "dev1", 2: "confirm2"}[GRID]  # grid 1 is development data since f207fd5
 SI = 20.07 + 0.46j
 
 
@@ -49,7 +54,14 @@ def score(q, packed, inst: Instrument):
     rel = np.abs(got / ref - 1)
     edge5 = (np.abs(qc[None, :] - q_true[:, None]) < 5 * sigma[:, None]).any(axis=1)
     counted = ~limited
+    report = resolution_report(q, packed, inst)
+    capped = report["capped"]
     return {
+        "capped_points": int(capped.sum()),
+        "max_rel_at_capped_points": float(rel[capped].max()) if capped.any() else None,
+        "max_estimated_error_at_capped_points": float(report["error"][capped].max())
+        if capped.any()
+        else None,
         "max_rel": float(rel[counted].max()),
         "q_at_max": float(q[counted][rel[counted].argmax()]),
         "max_rel_within_5_sigma_of_an_edge": float(rel[counted & edge5].max())
@@ -61,17 +73,32 @@ def score(q, packed, inst: Instrument):
 
 
 def structures():
-    real = {
-        "bare Si": Stack([], Layer(20.07)),
-        "film 9.6 / 1000 on Si": Stack([Layer(9.6, 1000, 3)], Layer(20.07, roughness=3)),
-        "Ni / C / Ni real": Stack(
-            [Layer(64.0, 100, 2), Layer(18.0, 800, 2)], Layer(64.0, roughness=2)
-        ),
-        "real waveguide": Stack([Layer(25.0, 30, 3), Layer(5.0, 300, 3)], Layer(20.0, roughness=3)),
-        "real superlattice": Stack(
-            [Layer(30.0, 25, 3), Layer(55.0, 35, 3.5)] * 20, Layer(20.07, roughness=3)
-        ),
-    }
+    if GRID == 1:
+        real = {
+            "bare Si": Stack([], Layer(20.07)),
+            "film 9.6 / 1000 on Si": Stack([Layer(9.6, 1000, 3)], Layer(20.07, roughness=3)),
+            "Ni / C / Ni real": Stack(
+                [Layer(64.0, 100, 2), Layer(18.0, 800, 2)], Layer(64.0, roughness=2)
+            ),
+            "real waveguide": Stack(
+                [Layer(25.0, 30, 3), Layer(5.0, 300, 3)], Layer(20.0, roughness=3)
+            ),
+            "real superlattice": Stack(
+                [Layer(30.0, 25, 3), Layer(55.0, 35, 3.5)] * 20, Layer(20.07, roughness=3)
+            ),
+        }
+    else:
+        si = Layer(20.07, roughness=3)
+        real = {
+            "superlattice 10 periods": Stack([Layer(15.0, 40, 3), Layer(45.0, 30, 3)] * 10, si),
+            "superlattice 40 periods": Stack([Layer(25.0, 20, 3), Layer(60.0, 20, 3)] * 40, si),
+            "triple waveguide": Stack(
+                [Layer(40.0, 50, 3), Layer(10.0, 200, 3)] * 2 + [Layer(40.0, 50, 3)], si
+            ),
+            "graded 10 layers": Stack(
+                [Layer(float(v), 20, 3) for v in np.linspace(10, 60, 10)], si
+            ),
+        }
     absorbing = {  # the cases of tests/test_review_physics.py
         "45+1.5i 2000 A": (Stack([Layer(45 + 1.5j, 2000, 4)], Layer(SI)), 1e-3, 0.0),
         "45+1.5i 4000 A": (Stack([Layer(45 + 1.5j, 4000, 4)], Layer(SI)), 2e-3, 0.0),
@@ -124,7 +151,7 @@ def accuracy():
         print(f"{name}: {results[name]['max_rel']:.1e}", flush=True)
     worst = max(r["max_rel"] for r in results.values())
     out = {"criterion": "max_rel <= 1e-4 at every counted point", "worst": worst, "cases": results}
-    (HERE / "confirm_accuracy.json").write_text(json.dumps(out, indent=1))
+    (HERE / f"{PREFIX}_accuracy.json").write_text(json.dumps(out, indent=1))
     print(f"worst {worst:.2e}: {'held' if worst <= 1e-4 else 'FALSIFIED'}")
 
 
@@ -145,13 +172,7 @@ def cost(backend: str):
         forward(q_in, packed, inst, backend=backend)
         sync()
         times.append(time.perf_counter() - t)
-    e = [
-        resolution.edges(packed[0][j], packed[1][j], inst.kalpha2_wavelength / WL)
-        for j in range(64)
-    ]
-    tth = np.degrees(2 * np.arcsin(q * WL / (4 * np.pi)))
-    q_true = np.stack([tth_to_q(tth + o, WL) for o in inst.tth_offset])
-    counts, _, _ = resolution.layout(q_true, np.repeat(inst.sigma_q[:, None], q.size, 1), e)
+    counts = resolution_report(q, draw(64, seed=SEED)[1], inst)["nodes"]
     out = {
         "backend": backend,
         "first_s": times[0],
@@ -161,7 +182,7 @@ def cost(backend: str):
         "nodes_per_point_max": int(counts.max()),
         "criterion": "<= 1 s and <= 2 GB (memory from the job cap report)",
     }
-    (HERE / f"confirm_cost_{backend}.json").write_text(json.dumps(out, indent=1))
+    (HERE / f"{PREFIX}_cost_{backend}.json").write_text(json.dumps(out, indent=1))
     print(json.dumps(out))
 
 

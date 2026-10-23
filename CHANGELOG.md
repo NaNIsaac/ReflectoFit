@@ -10,5 +10,7 @@
   reading, stitching, held-out splits, critical edge and Kiessig thickness estimators.
 - Least squares in a trust window and differential evolution; command line `calc`, `fit`,
   `score`, `stitch`.
+- Resolution at critical edges: each window is split at the edges and mapped so the square-root
+  kink leaves the integrand; real-SLD stacks no longer take up to 8001 nodes per point (#6).
 - Staged gradient fit (`fit.staged`, `reflectofit.staged`): the refine strategy of ReflectoLearn
   (stages, sigmoid bounds, Adam, its losses, Occam penalty) for any differentiable model.

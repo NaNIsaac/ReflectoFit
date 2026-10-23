@@ -11,12 +11,22 @@ is split at every edge inside it (Kα₂ edges included), and each piece [l, r] 
 - no edge: u = l + (r − l) s.
 
 R is then smooth in s, and each piece gets Gauss–Legendre panels of PANEL nodes, as many as the
-larger of: its fringe phase change T (√(q_r² − q_e²) − √(q_l² − q_e²)) over PHASE_PER_PANEL, with
-T the total film thickness and q_e the highest edge at or below the piece; and its length over
-GAUSS_PER_PANEL σ. Where a medium absorbs, waveguide resonances between the lowest and highest
-critical q are about as narrow as the narrowest absorbing edge width w, and the pieces there get
-nodes RESONANCE · w apart (in q). So only points near edges pay for them, and the count depends only
-on the curve's own stack and instrument, never on the rest of a batch.
+larger of: the change of every layer's phase or evanescent decay d_j |√(q_r² − q_cj²) − √(q_l² −
+q_cj²)| across it, summed over the layers (Kα₁ and Kα₂ images apart, the larger), over
+PHASE_PER_PANEL; and its length over GAUSS_PER_PANEL σ; both times the largest stretch of the map
+(2 with an edge at one end, π/2 at both). Where a medium absorbs, waveguide resonances between the
+lowest and highest critical q are about as narrow as the narrowest absorbing edge width w, and the
+pieces there get nodes RESONANCE · w apart (in q).
+
+Between the lowest and highest critical q, multilayers without absorption also have narrow
+features (resonant tunnelling through evanescent layers, an inference from ReflectoFit#6), whose
+width no edge sets. There each panel is compared with its two halves and split while they differ by
+more than REFINE_TOL of the point's integral over that range, up to MAX_DEPTH halvings; as R ≥ 0
+this bounds the point's relative error. A point that stops at MAX_DEPTH keeps its estimated error
+(`layout` returns it, `forward` warns).
+
+So only points near edges pay for them, and the nodes depend only on the curve's own stack and
+instrument, never on the rest of a batch.
 
 The counts and node positions are read from parameter values and are not traced; gradients come
 through R, the node positions q + σ u and the weights.
@@ -27,6 +37,8 @@ from typing import NamedTuple
 
 import numba
 import numpy as np
+
+from reflectofit.kernel import _reflectivity
 
 SPAN = 6.5
 """Nodes run over ±SPAN σ."""
@@ -45,6 +57,10 @@ the resonances there are narrower than one edge width, so the spacing is a quart
 MAX_POINT_NODES = 8001
 SPLIT_AT_EDGES = True
 """False integrates across the edges with plain panels (for tests that show the split matters)."""
+REFINE_TOL = 1e-5
+"""Relative tolerance of the refinement between the critical q; inf switches the refinement off."""
+MAX_DEPTH = 12
+"""Halvings of a panel at most."""
 
 
 class Edges(NamedTuple):
@@ -87,7 +103,8 @@ def _gauss_legendre(n: int) -> tuple[np.ndarray, np.ndarray]:
 @numba.njit(parallel=True, cache=True)
 def _pieces(q, sigma, qc, n_edges, depth, image, light, n_images, spacing, split, consts):
     """Pieces of every point's window, points of all curves flattened (B·Q, max pieces): ends in u,
-    edge flags and panel counts. Edge arrays are (B, max edges), the first n_edges[b] valid."""
+    edge flags, panel counts, and whether the piece reaches the range between the lowest and
+    highest critical q. Edge arrays are (B, max edges), the first n_edges[b] valid."""
     span, phase_per, gauss_per, panel, cap = consts
     n_b, n_q = q.shape
     m = qc.shape[1] + 1
@@ -95,6 +112,7 @@ def _pieces(q, sigma, qc, n_edges, depth, image, light, n_images, spacing, split
     hi = np.zeros((n_b * n_q, m))
     le = np.zeros((n_b * n_q, m), np.bool_)
     re = np.zeros((n_b * n_q, m), np.bool_)
+    bt = np.zeros((n_b * n_q, m), np.bool_)
     panels = np.zeros((n_b * n_q, m), np.int64)
     for t in numba.prange(n_b * n_q):
         c, i = t // n_q, t % n_q
@@ -142,62 +160,162 @@ def _pieces(q, sigma, qc, n_edges, depth, image, light, n_images, spacing, split
             n = max(
                 np.ceil(stretch * phase / phase_per), np.ceil(stretch * (b - a) / gauss_per), 1.0
             )
-            if spacing[c] > 0 and ql <= qmax and qr >= qmin:
+            between = n_e > 0 and ql <= qmax and qr >= qmin
+            if spacing[c] > 0 and between:
                 n = max(n, np.ceil((qr - ql) / (spacing[c] * panel)))
             lo[t, p], hi[t, p], le[t, p], re[t, p] = a, b, edge[p], edge[p + 1]
+            bt[t, p] = between
             panels[t, p] = int(n)
             total += int(n)
         if total > cap:
             for p in range(nb - 1):
                 if panels[t, p] > 0:
                     panels[t, p] = max(int(np.floor(panels[t, p] * cap / total)), 1)
-    return lo, hi, le, re, panels
+    return lo, hi, le, re, bt, panels
+
+
+@numba.njit(cache=True)
+def _map(s, a, b, left, right):
+    """u(s) and du/ds of a piece [a, b] with edge flags (module docstring)."""
+    length = b - a
+    if left and right:
+        return a + length * np.sin(0.5 * np.pi * s) ** 2, length * 0.5 * np.pi * np.sin(np.pi * s)
+    if left:
+        return a + length * s * s, 2.0 * length * s
+    if right:
+        return b - length * (1.0 - s) ** 2, 2.0 * length * (1.0 - s)
+    return a + length * s, length
+
+
+@numba.njit(cache=True)
+def _panel(s0, s1, a, b, left, right, qv, sv, c, rho, thickness, roughness, wl1, wl2, sg, wg):
+    """Gauss–Legendre values of R · Gaussian · du/ds over [s0, s1] of a piece, for Kα₁ and (when
+    wl2 > 0) Kα₂ apart, without footprint (a smooth factor that does not change where R needs
+    nodes). Refining each line on its own bounds any mix of the two, so the nodes do not depend on
+    the intensity ratio (which may be a traced value)."""
+    acc1 = 0.0
+    acc2 = 0.0
+    for g in range(sg.size):
+        x, d = _map(s0 + (s1 - s0) * sg[g], a, b, left, right)
+        sin_t = min(max((qv + sv * x) * wl1 / (4.0 * np.pi), 1e-12), 1.0)
+        f = wg[g] * (s1 - s0) * d * np.exp(-0.5 * x * x)
+        acc1 += f * _reflectivity(4.0 * np.pi / wl1 * sin_t, rho, thickness, roughness, c)
+        if wl2 > 0:
+            acc2 += f * _reflectivity(4.0 * np.pi / wl2 * sin_t, rho, thickness, roughness, c)
+    return acc1, acc2
 
 
 @numba.njit(parallel=True, cache=True)
-def _fill(lo, hi, le, re, panels, starts, sg, wg):
+def _nodes(
+    q, sigma, lo, hi, le, re, bt, panels, rho, thickness, roughness, wl1, wl2, tol, max_depth,
+    sg, wg, starts, u, w, counts, err, capped, fill,
+):  # fmt: skip
+    """Nodes of every point: uniform panels in s, and in the pieces between the critical q,
+    panels split while a panel and its two halves differ by more than tol of the point's
+    integral over those pieces (each wavelength on its own). With fill False only counts (B·Q,)
+    are written; with fill True u and w from starts, and err (estimated relative error) and capped
+    (stopped at max_depth)."""
     n_t, m = panels.shape
-    n_panel = sg.size
-    u = np.empty(starts[-1])
-    w = np.empty(starts[-1])
+    n_q = q.shape[1]
+    k_nodes = sg.size
     for t in numba.prange(n_t):
-        pos = starts[t]
+        c, i = t // n_q, t % n_q
+        qv, sv = q[c, i], sigma[c, i]
+        ref1 = 0.0
+        ref2 = 0.0
         for p in range(m):
-            k = panels[t, p]
-            a, b = lo[t, p], hi[t, p]
-            length = b - a
-            for c in range(k):
-                for g in range(n_panel):
-                    s = (c + sg[g]) / k
-                    if le[t, p] and re[t, p]:
-                        x = a + length * np.sin(0.5 * np.pi * s) ** 2
-                        d = length * 0.5 * np.pi * np.sin(np.pi * s)
-                    elif le[t, p]:
-                        x = a + length * s * s
-                        d = 2.0 * length * s
-                    elif re[t, p]:
-                        x = b - length * (1.0 - s) ** 2
-                        d = 2.0 * length * (1.0 - s)
-                    else:
-                        x = a + length * s
-                        d = length
-                    u[pos] = x
-                    w[pos] = wg[g] / k * d * np.exp(-0.5 * x * x)
-                    pos += 1
-        norm = w[starts[t] : pos].sum()
-        w[starts[t] : pos] /= norm
-    return u, w
+            if bt[t, p] and tol < np.inf:
+                for k in range(panels[t, p]):
+                    v1, v2 = _panel(k / panels[t, p], (k + 1) / panels[t, p], lo[t, p], hi[t, p],
+                                    le[t, p], re[t, p], qv, sv, c, rho, thickness, roughness, wl1,
+                                    wl2, sg, wg)  # fmt: skip
+                    ref1 += v1
+                    ref2 += v2
+        pos = starts[t] if fill else 0
+        n_out = 0
+        est1 = 0.0
+        est2 = 0.0
+        hit = False
+        stack0 = np.empty(2 * max_depth + 4)
+        stack1 = np.empty(2 * max_depth + 4)
+        stackd = np.empty(2 * max_depth + 4, np.int64)
+        for p in range(m):
+            a, b, left, right = lo[t, p], hi[t, p], le[t, p], re[t, p]
+            for k in range(panels[t, p]):
+                stack0[0], stack1[0], stackd[0] = k / panels[t, p], (k + 1) / panels[t, p], 0
+                top = 1
+                while top > 0:
+                    top -= 1
+                    s0, s1, dep = stack0[top], stack1[top], stackd[top]
+                    split = False
+                    halves = 1
+                    if bt[t, p] and ref1 > 0 and tol < np.inf:
+                        sm = 0.5 * (s0 + s1)
+                        w1, w2 = _panel(s0, s1, a, b, left, right, qv, sv, c, rho, thickness,
+                                        roughness, wl1, wl2, sg, wg)  # fmt: skip
+                        l1, l2 = _panel(s0, sm, a, b, left, right, qv, sv, c, rho, thickness,
+                                        roughness, wl1, wl2, sg, wg)  # fmt: skip
+                        r1, r2 = _panel(sm, s1, a, b, left, right, qv, sv, c, rho, thickness,
+                                        roughness, wl1, wl2, sg, wg)  # fmt: skip
+                        e1, e2 = abs(w1 - l1 - r1), abs(w2 - l2 - r2)
+                        over = e1 > tol * ref1 or (ref2 > 0 and e2 > tol * ref2)
+                        if over and dep < max_depth:
+                            split = True
+                        else:
+                            est1 += e1
+                            est2 += e2
+                            hit = hit or over
+                            halves = 2
+                    if split:
+                        stack0[top], stack1[top], stackd[top] = s0, 0.5 * (s0 + s1), dep + 1
+                        stack0[top + 1], stack1[top + 1], stackd[top + 1] = (
+                            0.5 * (s0 + s1),
+                            s1,
+                            dep + 1,
+                        )
+                        top += 2
+                        continue
+                    # emit the panel (as its two halves where it was tested)
+                    for h in range(halves):
+                        h0 = s0 + (s1 - s0) * h / halves
+                        h1 = s0 + (s1 - s0) * (h + 1) / halves
+                        for g in range(k_nodes):
+                            if fill:
+                                x, d = _map(h0 + (h1 - h0) * sg[g], a, b, left, right)
+                                u[pos] = x
+                                w[pos] = wg[g] * (h1 - h0) * d * np.exp(-0.5 * x * x)
+                                pos += 1
+                            n_out += 1
+        if fill:
+            norm = w[starts[t] : pos].sum()
+            w[starts[t] : pos] /= norm
+            e = est1 / ref1 if ref1 > 0 else 0.0
+            if ref2 > 0:
+                e = max(e, est2 / ref2)
+            err[t] = e
+            capped[t] = hit
+        else:
+            counts[t] = n_out
 
 
 def layout(
-    q: np.ndarray, sigma: np.ndarray, curves: list[Edges]
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Nodes of a batch of curves (q, sigma (B, Q)), by the rules of the module docstring: node
-    counts per point (B·Q,), and for every node, point after point, its position u in units of σ
-    and its weight (Gaussian, normalised per point)."""
+    q: np.ndarray,
+    sigma: np.ndarray,
+    packed: tuple[np.ndarray, np.ndarray, np.ndarray],
+    wavelength: float,
+    kalpha2_wavelength: float | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Nodes of a batch of curves (q, sigma (B, Q) true q and σ; packed (B, N) media), by the rules
+    of the module docstring: node counts per point (B·Q,); for every node, point after point, its
+    position u in units of σ and its weight (Gaussian, normalised per point); and per point the
+    estimated relative error of the refined range and whether refinement stopped at MAX_DEPTH."""
     q = np.ascontiguousarray(np.atleast_2d(q), float)
     sigma = np.ascontiguousarray(np.atleast_2d(sigma), float)
+    sld, thickness, roughness = (np.ascontiguousarray(np.atleast_2d(a)) for a in packed)
+    sld = sld.astype(np.complex128)
     n_b = q.shape[0]
+    ka2 = kalpha2_wavelength / wavelength if kalpha2_wavelength else None
+    curves = [edges(sld[c], thickness[c], ka2) for c in range(n_b)]
     width = max((e.qc.size for e in curves), default=0)
 
     def table(name, dtype, fill):
@@ -210,7 +328,7 @@ def layout(
         [RESONANCE * e.width[e.width > 0].min() if (e.width > 0).any() else 0.0 for e in curves]
     )
     consts = (SPAN, PHASE_PER_PANEL, GAUSS_PER_PANEL, float(PANEL), MAX_POINT_NODES // PANEL)
-    lo, hi, le, re, panels = _pieces(
+    lo, hi, le, re, bt, panels = _pieces(
         q,
         sigma,
         table("qc", float, 0.0)[:, :width],
@@ -223,16 +341,18 @@ def layout(
         SPLIT_AT_EDGES,
         consts,
     )
-    counts = panels.sum(axis=1) * PANEL
+    rho = 4.0e-6 * np.pi * np.conj(sld - sld[:, :1])
+    sg, wg = _gauss_legendre(PANEL)
+    n_t = q.size
+    counts = np.zeros(n_t, np.int64)
+    err = np.zeros(n_t)
+    capped = np.zeros(n_t, np.bool_)
+    args = (q, sigma, lo, hi, le, re, bt, panels, rho, np.ascontiguousarray(thickness, float),
+            np.ascontiguousarray(roughness, float), float(wavelength),
+            float(kalpha2_wavelength) if ka2 is not None else 0.0, REFINE_TOL, MAX_DEPTH,
+            sg, wg)  # fmt: skip
+    _nodes(*args, np.zeros(1, np.int64), np.empty(0), np.empty(0), counts, err, capped, False)
     starts = np.concatenate([[0], np.cumsum(counts)])
-    u, w = _fill(lo, hi, le, re, panels, starts, *_gauss_legendre(PANEL))
-    return counts, u, w
-
-
-def point_layout(
-    q: np.ndarray, sigma: np.ndarray, e: Edges
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Flat node list for one curve (q, sigma (Q,)): owner point of each node, its position u in
-    units of σ, and its weight (Gaussian, normalised per point)."""
-    counts, u, w = layout(q, sigma, [e])
-    return np.repeat(np.arange(np.size(q)), counts), u, w
+    u, w = np.empty(starts[-1]), np.empty(starts[-1])
+    _nodes(*args, starts, u, w, counts, err, capped, True)
+    return counts, u, w, err, capped

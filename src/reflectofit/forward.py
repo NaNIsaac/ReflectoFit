@@ -6,6 +6,7 @@ ratio) times the footprint factor at that angle. The weighted sum over nodes is 
 background is added (DESIGN.md section 2). Every instrument field may be a scalar or a (B,) array, one value per curve.
 """
 
+import warnings
 from dataclasses import dataclass, fields
 from typing import Any
 
@@ -127,10 +128,18 @@ def _point_smear(ops, kernel, q_true, sigma, packed, inst: Instrument):
     all nodes of a curve in one flat list, one kernel call, summed back per point."""
     b, nq = q_true.shape[0], q_true.shape[1]
     qt, sg = _numpy(q_true)[..., 0], _numpy(sigma)[..., 0]
-    sld, thickness = _numpy(packed[0]), _numpy(packed[1])
-    ka2 = inst.kalpha2_wavelength / inst.wavelength if _active(inst.kalpha2_ratio) else None
-    curves = [resolution.edges(sld[i], thickness[i], ka2) for i in range(b)]
-    counts, u_all, w_all = resolution.layout(qt, sg, curves)
+    ka2 = _active(inst.kalpha2_ratio)
+    counts, u_all, w_all, err, capped = resolution.layout(
+        qt, sg, tuple(_numpy(a) for a in packed), inst.wavelength,
+        inst.kalpha2_wavelength if ka2 else None,
+    )  # fmt: skip
+    if capped.any():
+        warnings.warn(
+            f"resolution: {int(capped.sum())} points stopped refining at MAX_DEPTH; estimated "
+            f"relative error up to {err[capped].max():.1e} (resolution_report gives it per point)",
+            RuntimeWarning,
+            stacklevel=4,
+        )
     if ops is _NumpyOps:
         # one fused numba loop over the points and their nodes (no padding, no temporaries)
         footprint = inst.sample_length is not None and inst.beam_sigma is not None
@@ -143,7 +152,7 @@ def _point_smear(ops, kernel, q_true, sigma, packed, inst: Instrument):
             w_all,
             *packed,
             inst.wavelength,
-            inst.kalpha2_wavelength if ka2 is not None else 0.0,
+            inst.kalpha2_wavelength if ka2 else 0.0,
             ops.column(inst.kalpha2_ratio, b).ravel(),
             ops.column(inst.sample_length, b).ravel() if footprint else nan,
             ops.column(inst.beam_sigma, b).ravel() if footprint else nan,
@@ -257,3 +266,38 @@ def forward(
     else:
         r = _observed(_NumpyOps, parratt, q, b, packed, instrument)
     return r[0] if single else r
+
+
+def resolution_report(q: ArrayLike, model, instrument: Instrument) -> dict[str, NDArray]:
+    """For the default resolution rule: nodes per point, the estimated relative error of the refined
+    range between the critical q, and whether refinement stopped at `resolution.MAX_DEPTH`, each
+    (B, Q) (or (Q,) for one model). What `forward` integrates with, without evaluating the curve."""
+    packed, single = as_batch(model)
+    q = np.asarray(q, dtype=float)
+    b = packed[0].shape[0]
+    inst = instrument
+    wl1 = inst.wavelength
+
+    def col(v):
+        return np.broadcast_to(np.asarray(v, dtype=float), (b,))[:, None]
+
+    theta = np.degrees(np.arcsin(np.clip(q * wl1 / (4.0 * np.pi), 0.0, 1.0)))[None, :]
+    theta = np.clip(theta + 0.5 * col(inst.tth_offset), 1e-9, 0.5 * MAX_TTH)
+    q_true = 4.0 * np.pi / wl1 * np.sin(np.radians(theta))
+    sigma = np.sqrt(
+        np.clip(col(inst.sigma_q) ** 2 + (col(inst.dq_over_q) * q_true) ** 2, 1e-300, None)
+    )
+    ka2 = _active(inst.kalpha2_ratio)
+    counts, _, _, err, capped = resolution.layout(
+        q_true,
+        sigma,
+        packed,
+        wl1,
+        inst.kalpha2_wavelength if ka2 else None,
+    )
+    out = {
+        "nodes": counts.reshape(b, -1),
+        "error": err.reshape(b, -1),
+        "capped": capped.reshape(b, -1),
+    }
+    return {k: v[0] for k, v in out.items()} if single else out

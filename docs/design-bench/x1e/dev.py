@@ -11,6 +11,7 @@ import numpy as np
 from rl_distribution import WL, draw
 
 from reflectofit import Instrument, Layer, Stack, forward, resolution, tth_to_q
+from reflectofit.forward import resolution_report
 
 
 def brute(q, packed, inst: Instrument, sigma, n=24001, chunk=100):
@@ -28,11 +29,7 @@ def brute(q, packed, inst: Instrument, sigma, n=24001, chunk=100):
 
 
 def nodes_per_point(q, packed, inst: Instrument):
-    sld, thk = packed[0], packed[1]
-    ka2 = inst.kalpha2_wavelength / inst.wavelength if np.any(inst.kalpha2_ratio) else None
-    sigma = np.full(q.size, inst.sigma_q)
-    owner, _, _ = resolution.point_layout(q, sigma, resolution.edges(sld, thk, ka2))
-    return owner.size / q.size
+    return float(resolution_report(q, packed, inst)["nodes"].mean())
 
 
 def main():
@@ -43,11 +40,8 @@ def main():
         f"GAUSS_PER_PANEL {resolution.GAUSS_PER_PANEL}, PHASE_PER_PANEL {resolution.PHASE_PER_PANEL}"
     )
     q0, p0, i0 = draw(64, seed=0)
-    ka2 = i0.kalpha2_wavelength / i0.wavelength
     t = time.perf_counter()
-    for j in range(64):
-        e = resolution.edges(p0[0][j], p0[1][j], ka2)
-        resolution.point_layout(q0, np.full(q0.size, i0.sigma_q[j]), e)
+    resolution_report(q0, p0, i0)
     print(f"layouts alone: {time.perf_counter() - t:.2f} s")
     q, packed, inst = draw(64, seed=0)
     forward(q, tuple(a[:2] for a in packed), Instrument(wavelength=WL, sigma_q=1e-3))  # compile

@@ -1,0 +1,746 @@
+{
+ "criterion": "max_rel <= 1e-4 at every counted point",
+ "worst": 1.7196732528423908e-05,
+ "cases": {
+  "RL 0 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.612625997766571e-07,
+   "q_at_max": 0.03764388491729307,
+   "max_rel_within_5_sigma_of_an_edge": 2.612625997766571e-07,
+   "max_rel_all_points": 2.612625997766571e-07,
+   "reference_limited_points": 0
+  },
+  "RL 1 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.7859981271683978e-09,
+   "q_at_max": 0.08610497533760485,
+   "max_rel_within_5_sigma_of_an_edge": 6.257543372356622e-10,
+   "max_rel_all_points": 1.7859981271683978e-09,
+   "reference_limited_points": 0
+  },
+  "RL 2 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 6.334647251193815e-10,
+   "q_at_max": 0.5622978255844893,
+   "max_rel_within_5_sigma_of_an_edge": 2.0610624318351256e-10,
+   "max_rel_all_points": 6.334647251193815e-10,
+   "reference_limited_points": 0
+  },
+  "RL 3 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 8.841996024244736e-10,
+   "q_at_max": 0.07385678726910676,
+   "max_rel_within_5_sigma_of_an_edge": 5.004112679785067e-10,
+   "max_rel_all_points": 8.841996024244736e-10,
+   "reference_limited_points": 0
+  },
+  "RL 4 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.0994085177795654e-06,
+   "q_at_max": 0.03924153382973049,
+   "max_rel_within_5_sigma_of_an_edge": 1.0994085177795654e-06,
+   "max_rel_all_points": 1.0994085177795654e-06,
+   "reference_limited_points": 0
+  },
+  "RL 5 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.5998496971647569e-09,
+   "q_at_max": 0.09888548604412961,
+   "max_rel_within_5_sigma_of_an_edge": 8.810521201496613e-10,
+   "max_rel_all_points": 1.5998496971647569e-09,
+   "reference_limited_points": 0
+  },
+  "RL 6 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 5.411104897490304e-10,
+   "q_at_max": 0.07918210849935516,
+   "max_rel_within_5_sigma_of_an_edge": 2.553430800134038e-10,
+   "max_rel_all_points": 5.411104897490304e-10,
+   "reference_limited_points": 0
+  },
+  "RL 7 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.676014381781556e-09,
+   "q_at_max": 0.09409282127574382,
+   "max_rel_within_5_sigma_of_an_edge": 1.7385399786462585e-09,
+   "max_rel_all_points": 3.676014381781556e-09,
+   "reference_limited_points": 0
+  },
+  "RL 8 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.8469166196410924e-09,
+   "q_at_max": 0.09569037988723184,
+   "max_rel_within_5_sigma_of_an_edge": 9.929425059951313e-10,
+   "max_rel_all_points": 1.8469166196410924e-09,
+   "reference_limited_points": 0
+  },
+  "RL 9 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 7.795822876133229e-10,
+   "q_at_max": 0.0664012852040992,
+   "max_rel_within_5_sigma_of_an_edge": 4.859849189742249e-10,
+   "max_rel_all_points": 7.795822876133229e-10,
+   "reference_limited_points": 0
+  },
+  "RL 10 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 6.300752489751815e-07,
+   "q_at_max": 0.03444858282444311,
+   "max_rel_within_5_sigma_of_an_edge": 6.300752489751815e-07,
+   "max_rel_all_points": 6.300752489751815e-07,
+   "reference_limited_points": 0
+  },
+  "RL 11 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.440789747039986e-08,
+   "q_at_max": 0.0307207237409122,
+   "max_rel_within_5_sigma_of_an_edge": 4.440789747039986e-08,
+   "max_rel_all_points": 4.440789747039986e-08,
+   "reference_limited_points": 0
+  },
+  "RL 12 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.261101778560203e-09,
+   "q_at_max": 0.07705198392748039,
+   "max_rel_within_5_sigma_of_an_edge": 7.010438896060123e-10,
+   "max_rel_all_points": 1.261101778560203e-09,
+   "reference_limited_points": 0
+  },
+  "RL 13 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.854134595331459e-09,
+   "q_at_max": 0.09143021560453683,
+   "max_rel_within_5_sigma_of_an_edge": 2.1216434165083342e-09,
+   "max_rel_all_points": 2.854134595331459e-09,
+   "reference_limited_points": 0
+  },
+  "RL 14 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 8.611321655749293e-10,
+   "q_at_max": 0.09515786075463137,
+   "max_rel_within_5_sigma_of_an_edge": 5.128530933262709e-10,
+   "max_rel_all_points": 8.611321655749293e-10,
+   "reference_limited_points": 0
+  },
+  "RL 15 sigma drawn": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 6.093576754295782e-10,
+   "q_at_max": 0.22241324522953515,
+   "max_rel_within_5_sigma_of_an_edge": 3.49504869490147e-11,
+   "max_rel_all_points": 6.093576754295782e-10,
+   "reference_limited_points": 0
+  },
+  "RL 0 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 9.17556008950271e-09,
+   "q_at_max": 0.02965561993391706,
+   "max_rel_within_5_sigma_of_an_edge": 9.17556008950271e-09,
+   "max_rel_all_points": 9.17556008950271e-09,
+   "reference_limited_points": 0
+  },
+  "RL 1 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.1009728946050927e-10,
+   "q_at_max": 0.06480367019444666,
+   "max_rel_within_5_sigma_of_an_edge": 4.732880753977042e-13,
+   "max_rel_all_points": 4.1009728946050927e-10,
+   "reference_limited_points": 0
+  },
+  "RL 2 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 7.245032351832492e-10,
+   "q_at_max": 0.07438932084520368,
+   "max_rel_within_5_sigma_of_an_edge": 3.6344260934129125e-12,
+   "max_rel_all_points": 7.245032351832492e-10,
+   "reference_limited_points": 0
+  },
+  "RL 3 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.1940508581886888e-09,
+   "q_at_max": 0.061075892283509764,
+   "max_rel_within_5_sigma_of_an_edge": 2.167266366370768e-11,
+   "max_rel_all_points": 1.1940508581886888e-09,
+   "reference_limited_points": 0
+  },
+  "RL 4 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.0676205192415864e-09,
+   "q_at_max": 0.03391603194884296,
+   "max_rel_within_5_sigma_of_an_edge": 2.0676205192415864e-09,
+   "max_rel_all_points": 2.0676205192415864e-09,
+   "reference_limited_points": 0
+  },
+  "RL 5 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.1723203519053982e-09,
+   "q_at_max": 0.07279171917541763,
+   "max_rel_within_5_sigma_of_an_edge": 1.2925216452686072e-11,
+   "max_rel_all_points": 1.1723203519053982e-09,
+   "reference_limited_points": 0
+  },
+  "RL 6 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 8.51206660712478e-10,
+   "q_at_max": 0.06320605270055352,
+   "max_rel_within_5_sigma_of_an_edge": 5.059286323216838e-12,
+   "max_rel_all_points": 8.51206660712478e-10,
+   "reference_limited_points": 0
+  },
+  "RL 7 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.0389072935268473e-09,
+   "q_at_max": 0.08770255137185065,
+   "max_rel_within_5_sigma_of_an_edge": 3.45956596703445e-11,
+   "max_rel_all_points": 1.0389072935268473e-09,
+   "reference_limited_points": 0
+  },
+  "RL 8 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.212335010158938e-09,
+   "q_at_max": 0.072259184662362,
+   "max_rel_within_5_sigma_of_an_edge": 4.114708573865755e-12,
+   "max_rel_all_points": 1.212335010158938e-09,
+   "reference_limited_points": 0
+  },
+  "RL 9 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 7.72953367977891e-10,
+   "q_at_max": 0.05149012099333788,
+   "max_rel_within_5_sigma_of_an_edge": 3.268774140252617e-11,
+   "max_rel_all_points": 7.72953367977891e-10,
+   "reference_limited_points": 0
+  },
+  "RL 10 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.321246572734026e-08,
+   "q_at_max": 0.031253275449264775,
+   "max_rel_within_5_sigma_of_an_edge": 2.321246572734026e-08,
+   "max_rel_all_points": 2.321246572734026e-08,
+   "reference_limited_points": 0
+  },
+  "RL 11 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.1807744115799323e-08,
+   "q_at_max": 0.0307207237409122,
+   "max_rel_within_5_sigma_of_an_edge": 1.1807744115799323e-08,
+   "max_rel_all_points": 1.1807744115799323e-08,
+   "reference_limited_points": 0
+  },
+  "RL 12 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.3821936928337664e-09,
+   "q_at_max": 0.06160843278366428,
+   "max_rel_within_5_sigma_of_an_edge": 2.3032464824268573e-11,
+   "max_rel_all_points": 1.3821936928337664e-09,
+   "reference_limited_points": 0
+  },
+  "RL 13 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 7.737255280915178e-11,
+   "q_at_max": 0.0658687471473556,
+   "max_rel_within_5_sigma_of_an_edge": 8.992140365648993e-12,
+   "max_rel_all_points": 7.737255280915178e-11,
+   "reference_limited_points": 0
+  },
+  "RL 14 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.051172815458301e-09,
+   "q_at_max": 0.07012904355499272,
+   "max_rel_within_5_sigma_of_an_edge": 2.244759933489604e-11,
+   "max_rel_all_points": 1.051172815458301e-09,
+   "reference_limited_points": 0
+  },
+  "RL 15 sigma 1e-4": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 5.791450652381513e-10,
+   "q_at_max": 0.06320605270055352,
+   "max_rel_within_5_sigma_of_an_edge": 3.2405966798876307e-11,
+   "max_rel_all_points": 5.791450652381513e-10,
+   "reference_limited_points": 0
+  },
+  "RL 0 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.860071784960283e-07,
+   "q_at_max": 0.02965561993391706,
+   "max_rel_within_5_sigma_of_an_edge": 2.860071784960283e-07,
+   "max_rel_all_points": 2.860071784960283e-07,
+   "reference_limited_points": 0
+  },
+  "RL 1 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 5.663392976806847e-09,
+   "q_at_max": 0.09302778019372887,
+   "max_rel_within_5_sigma_of_an_edge": 2.1881748635266263e-09,
+   "max_rel_all_points": 5.663392976806847e-09,
+   "reference_limited_points": 0
+  },
+  "RL 2 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.6920680956953333e-09,
+   "q_at_max": 0.1063406739293396,
+   "max_rel_within_5_sigma_of_an_edge": 1.8107843002823643e-09,
+   "max_rel_all_points": 3.6920680956953333e-09,
+   "reference_limited_points": 0
+  },
+  "RL 3 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 5.368752220569206e-09,
+   "q_at_max": 0.09569037988723184,
+   "max_rel_within_5_sigma_of_an_edge": 2.719282465868389e-09,
+   "max_rel_all_points": 5.368752220569206e-09,
+   "reference_limited_points": 0
+  },
+  "RL 4 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.1991431844160516e-06,
+   "q_at_max": 0.04137173002900916,
+   "max_rel_within_5_sigma_of_an_edge": 1.1991431844160516e-06,
+   "max_rel_all_points": 1.1991431844160516e-06,
+   "reference_limited_points": 0
+  },
+  "RL 5 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.6532365193787655e-09,
+   "q_at_max": 0.1063406739293396,
+   "max_rel_within_5_sigma_of_an_edge": 1.3111012275857092e-09,
+   "max_rel_all_points": 2.6532365193787655e-09,
+   "reference_limited_points": 0
+  },
+  "RL 6 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.851091058213683e-09,
+   "q_at_max": 0.10048303346705538,
+   "max_rel_within_5_sigma_of_an_edge": 1.0203260458752084e-09,
+   "max_rel_all_points": 1.851091058213683e-09,
+   "reference_limited_points": 0
+  },
+  "RL 7 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.957391081499395e-09,
+   "q_at_max": 0.09569037988723184,
+   "max_rel_within_5_sigma_of_an_edge": 1.966998230962247e-09,
+   "max_rel_all_points": 3.957391081499395e-09,
+   "reference_limited_points": 0
+  },
+  "RL 8 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.0481744905941355e-09,
+   "q_at_max": 0.10314560391501218,
+   "max_rel_within_5_sigma_of_an_edge": 1.5594086022474585e-09,
+   "max_rel_all_points": 3.0481744905941355e-09,
+   "reference_limited_points": 0
+  },
+  "RL 9 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.6514342377790285e-09,
+   "q_at_max": 0.08823507597249775,
+   "max_rel_within_5_sigma_of_an_edge": 2.273281007880712e-09,
+   "max_rel_all_points": 4.6514342377790285e-09,
+   "reference_limited_points": 0
+  },
+  "RL 10 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.207148125126345e-06,
+   "q_at_max": 0.03657878483684663,
+   "max_rel_within_5_sigma_of_an_edge": 1.207148125126345e-06,
+   "max_rel_all_points": 1.207148125126345e-06,
+   "reference_limited_points": 0
+  },
+  "RL 11 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.107192301175175e-07,
+   "q_at_max": 0.034981133553311915,
+   "max_rel_within_5_sigma_of_an_edge": 1.107192301175175e-07,
+   "max_rel_all_points": 1.107192301175175e-07,
+   "reference_limited_points": 0
+  },
+  "RL 12 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.669614028784963e-09,
+   "q_at_max": 0.09356030093399315,
+   "max_rel_within_5_sigma_of_an_edge": 2.2455531878406987e-09,
+   "max_rel_all_points": 4.669614028784963e-09,
+   "reference_limited_points": 0
+  },
+  "RL 13 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.622807137089069e-09,
+   "q_at_max": 0.09462534121671262,
+   "max_rel_within_5_sigma_of_an_edge": 2.672160714922711e-09,
+   "max_rel_all_points": 4.622807137089069e-09,
+   "reference_limited_points": 0
+  },
+  "RL 14 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.5458916369226472e-09,
+   "q_at_max": 0.10527565237883925,
+   "max_rel_within_5_sigma_of_an_edge": 8.632411452325073e-10,
+   "max_rel_all_points": 1.5458916369226472e-09,
+   "reference_limited_points": 0
+  },
+  "RL 15 sigma 6e-3": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.9291651043882325e-09,
+   "q_at_max": 0.08876760019731367,
+   "max_rel_within_5_sigma_of_an_edge": 1.9173493903679173e-09,
+   "max_rel_all_points": 3.9291651043882325e-09,
+   "reference_limited_points": 0
+  },
+  "bare Si {'sigma_q': 0.0001}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.3672567966693805e-08,
+   "q_at_max": 0.0318864774624374,
+   "max_rel_within_5_sigma_of_an_edge": 1.3672567966693805e-08,
+   "max_rel_all_points": 1.3672567966693805e-08,
+   "reference_limited_points": 0
+  },
+  "bare Si {'sigma_q': 0.0005}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 9.802850142737185e-08,
+   "q_at_max": 0.03252086811352254,
+   "max_rel_within_5_sigma_of_an_edge": 9.802850142737185e-08,
+   "max_rel_all_points": 9.802850142737185e-08,
+   "reference_limited_points": 0
+  },
+  "bare Si {'sigma_q': 0.002}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.4665283477064435e-07,
+   "q_at_max": 0.033789649415692825,
+   "max_rel_within_5_sigma_of_an_edge": 3.4665283477064435e-07,
+   "max_rel_all_points": 3.4665283477064435e-07,
+   "reference_limited_points": 0
+  },
+  "bare Si {'dq_over_q': 0.02}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.2156553619302457e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 1.2156553619302457e-07,
+   "max_rel_all_points": 1.2156553619302457e-07,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'sigma_q': 0.0001}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.543741428606694e-08,
+   "q_at_max": 0.0318864774624374,
+   "max_rel_within_5_sigma_of_an_edge": 2.543741428606694e-08,
+   "max_rel_all_points": 2.543741428606694e-08,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'sigma_q': 0.0005}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.7655786677117646e-07,
+   "q_at_max": 0.03252086811352254,
+   "max_rel_within_5_sigma_of_an_edge": 1.7655786677117646e-07,
+   "max_rel_all_points": 1.7655786677117646e-07,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'sigma_q': 0.002}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 6.399327745487682e-07,
+   "q_at_max": 0.033789649415692825,
+   "max_rel_within_5_sigma_of_an_edge": 6.399327745487682e-07,
+   "max_rel_all_points": 6.399327745487682e-07,
+   "reference_limited_points": 0
+  },
+  "film 9.6 / 1000 on Si {'dq_over_q': 0.02}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.1277448714052127e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 2.1277448714052127e-07,
+   "max_rel_all_points": 2.1277448714052127e-07,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'sigma_q': 0.0001}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.1593365889517315e-07,
+   "q_at_max": 0.056627712854757935,
+   "max_rel_within_5_sigma_of_an_edge": 1.1593365889517315e-07,
+   "max_rel_all_points": 1.1593365889517315e-07,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'sigma_q': 0.0005}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 7.19767779044922e-07,
+   "q_at_max": 0.05631051752921536,
+   "max_rel_within_5_sigma_of_an_edge": 7.19767779044922e-07,
+   "max_rel_all_points": 7.19767779044922e-07,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'sigma_q': 0.002}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.368846360956134e-06,
+   "q_at_max": 0.05631051752921536,
+   "max_rel_within_5_sigma_of_an_edge": 2.368846360956134e-06,
+   "max_rel_all_points": 2.368846360956134e-06,
+   "reference_limited_points": 0
+  },
+  "Ni / C / Ni real {'dq_over_q': 0.02}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 8.882996356263106e-07,
+   "q_at_max": 0.056627712854757935,
+   "max_rel_within_5_sigma_of_an_edge": 8.882996356263106e-07,
+   "max_rel_all_points": 8.882996356263106e-07,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'sigma_q': 0.0001}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.1881706002702117e-08,
+   "q_at_max": 0.031569282136894826,
+   "max_rel_within_5_sigma_of_an_edge": 2.1881706002702117e-08,
+   "max_rel_all_points": 2.1881706002702117e-08,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'sigma_q': 0.0005}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.219038032797883e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 3.219038032797883e-07,
+   "max_rel_all_points": 3.219038032797883e-07,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'sigma_q': 0.002}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 7.427700248197056e-07,
+   "q_at_max": 0.033472454090150254,
+   "max_rel_within_5_sigma_of_an_edge": 7.427700248197056e-07,
+   "max_rel_all_points": 7.427700248197056e-07,
+   "reference_limited_points": 0
+  },
+  "real waveguide {'dq_over_q': 0.02}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.2744372297232047e-07,
+   "q_at_max": 0.03220367278797997,
+   "max_rel_within_5_sigma_of_an_edge": 4.2744372297232047e-07,
+   "max_rel_all_points": 4.2744372297232047e-07,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'sigma_q': 0.0001}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.250583580083344e-09,
+   "q_at_max": 0.12006677796327213,
+   "max_rel_within_5_sigma_of_an_edge": 4.035971556959339e-11,
+   "max_rel_all_points": 3.250583580083344e-09,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'sigma_q': 0.0005}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 2.50327701234454e-07,
+   "q_at_max": 0.04964941569282137,
+   "max_rel_within_5_sigma_of_an_edge": 6.377096628540357e-10,
+   "max_rel_all_points": 2.50327701234454e-07,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'sigma_q': 0.002}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.840440825295886e-06,
+   "q_at_max": 0.0417195325542571,
+   "max_rel_within_5_sigma_of_an_edge": 1.840440825295886e-06,
+   "max_rel_all_points": 1.840440825295886e-06,
+   "reference_limited_points": 0
+  },
+  "real superlattice {'dq_over_q': 0.02}": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.7196732528423908e-05,
+   "q_at_max": 0.046477462437395665,
+   "max_rel_within_5_sigma_of_an_edge": 2.711242682806869e-06,
+   "max_rel_all_points": 1.7196732528423908e-05,
+   "reference_limited_points": 0
+  },
+  "45+1.5i 2000 A": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.4306111850714842e-10,
+   "q_at_max": 0.053417085427135684,
+   "max_rel_within_5_sigma_of_an_edge": 1.205897603995254e-10,
+   "max_rel_all_points": 1.4306111850714842e-10,
+   "reference_limited_points": 0
+  },
+  "45+1.5i 4000 A": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 4.2605596828337866e-10,
+   "q_at_max": 0.05977386934673368,
+   "max_rel_within_5_sigma_of_an_edge": 3.440969731371979e-10,
+   "max_rel_all_points": 4.2605596828337866e-10,
+   "reference_limited_points": 0
+  },
+  "45+1.5i 1000 A dq/q": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.5570189582092553e-10,
+   "q_at_max": 0.0542462311557789,
+   "max_rel_within_5_sigma_of_an_edge": 1.2980505559312405e-10,
+   "max_rel_all_points": 1.5570189582092553e-10,
+   "reference_limited_points": 0
+  },
+  "PS-like 9.6+0.012i": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.072977817706544e-09,
+   "q_at_max": 0.09984274544813025,
+   "max_rel_within_5_sigma_of_an_edge": 9.36610788926373e-11,
+   "max_rel_all_points": 1.072977817706544e-09,
+   "reference_limited_points": 0
+  },
+  "45+0.05i 1000 A": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 1.2452879838420472e-09,
+   "q_at_max": 0.4173523171289079,
+   "max_rel_within_5_sigma_of_an_edge": 5.7831073263514554e-11,
+   "max_rel_all_points": 1.2452879838420472e-09,
+   "reference_limited_points": 0
+  },
+  "Ni/C/Ni waveguide": {
+   "capped_points": 0,
+   "max_rel_at_capped_points": null,
+   "max_estimated_error_at_capped_points": null,
+   "max_rel": 3.413180849065611e-10,
+   "q_at_max": 0.05673366834170855,
+   "max_rel_within_5_sigma_of_an_edge": 3.413180849065611e-10,
+   "max_rel_all_points": 3.413180849065611e-10,
+   "reference_limited_points": 0
+  }
+ }
+}
