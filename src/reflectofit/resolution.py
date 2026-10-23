@@ -1,10 +1,12 @@
 """Nodes and weights for the resolution integral, chosen per measured point.
 
 Each point integrates R against its Gaussian over ±SPAN σ. R has a square-root kink at the critical
-edge q_c of every medium (kz = √(q² − q_c²)/2 changes from imaginary to real there; absorption
-rounds it over a width 8π Im ρ / q_c). Uniform nodes converge slowly on such a kink, so the window
-is split at every edge inside it (Kα₂ edges included), and each piece [l, r] is mapped from s in
-[0, 1] so that the distance to an edge end goes as s²:
+edge q_c of the substrate (kz = √(q² − q_c²)/2 of a semi-infinite medium changes from imaginary to
+real there; absorption rounds it over a width 8π Im ρ / q_c). A finite layer enters R only through
+even functions of its own kz, Névot–Croce factors included, so its edge is smooth, though R can
+change fast there. Uniform nodes converge slowly on a kink, so the window is split at every edge
+inside it (Kα₂ edges included; splitting at a smooth edge costs nodes, not accuracy), and each
+piece [l, r] is mapped from s in [0, 1] so that the distance to an edge end goes as s²:
 
 - edge at both ends: u = l + (r − l) sin²(π s / 2);
 - edge at the left end: u = l + (r − l) s²; at the right end: u = r − (r − l) (1 − s)²;
@@ -19,11 +21,12 @@ lowest and highest critical q are about as narrow as the narrowest absorbing edg
 pieces there get nodes RESONANCE · w apart (in q).
 
 Between the lowest and highest critical q, multilayers without absorption also have narrow
-features (resonant tunnelling through evanescent layers, an inference from ReflectoFit#6), whose
-width no edge sets. There each panel is compared with its two halves and split while they differ by
-more than REFINE_TOL of the point's integral over that range, up to MAX_DEPTH halvings; as R ≥ 0
-this bounds the point's relative error. A point that stops at MAX_DEPTH keeps its estimated error
-(`layout` returns it, `forward` warns).
+features whose width no edge sets: in a superlattice, the transmission resonances of its first
+Kronig–Penney miniband, which narrow with the number of periods (physics review of ReflectoFit#8).
+There each panel is compared with its two halves and split while they differ by more than
+REFINE_TOL of the point's integral over that range, up to MAX_DEPTH halvings. The tolerance holds
+per panel; the sum of those differences is the point's estimated relative error, which `layout`
+returns, and `forward` warns when it exceeds REFINE_TOL or a point stops at MAX_DEPTH.
 
 So only points near edges pay for them, and the nodes depend only on the curve's own stack and
 instrument, never on the rest of a batch.

@@ -65,6 +65,12 @@ point's integral over that range (R ≥ 0, so this bounds the point's relative e
 limit. A point that stops at the limit carries its estimated error, `forward` warns, and
 `resolution_report` returns the estimate and the flag per point. Everything else stays as above.
 
+> Correction (physics review of ReflectoFit#8, after confirmation 2; the registered text above is
+> left as written): the tolerance holds per panel, so it does not bound the point's relative error
+> when more than one panel is refined; the point's estimate is the sum of the panel differences,
+> up to REFINE_TOL × the number of refined panels. No registered result depends on it (the largest
+> estimate in confirmation 2 was 1.3e-5, the criterion 1e-4).
+
 Development grid, now including the first confirmation grid (with the 20-period superlattice).
 
 Confirmation grid 2 (`confirm.py --grid 2`, nothing tuned on it):
@@ -118,3 +124,13 @@ nothing tuned on it:
 Criteria and reference as in the first registration (accuracy ≤ 1e-4 at every counted point,
 capped points included; cost ≤ 1 s and ≤ 2 GB in a quiet window; existing tests pass). If the
 quiet cost passes with the third registration's rule, nothing here applies.
+
+## Result of the quiet cost measurement (37e47e2)
+
+Criterion 2 held with the third registration's rule (75c7b1c, nodes kept by af72414), so the
+conditional fourth registration does not apply. Quiet window 05:22, load 10 % at the start: numba,
+batch 64 × 2000 at seed 20261026, five calls after the first 0.749, 0.753, 0.749, 0.795, 0.991 s
+(median 0.755 s), peak job memory 1.07 GB. The first call took 2.08 s; it includes loading the
+numba cache, and the criterion is read as the cost per batch of a running generator, so it is not
+counted. The torch backend in this environment is the CPU build: 5.0 s, 1.85 GB; the GPU was not
+measured.

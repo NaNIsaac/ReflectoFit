@@ -133,10 +133,12 @@ def _point_smear(ops, kernel, q_true, sigma, packed, inst: Instrument):
         qt, sg, tuple(_numpy(a) for a in packed), inst.wavelength,
         inst.kalpha2_wavelength if ka2 else None,
     )  # fmt: skip
-    if capped.any():
+    loose = capped | (err > resolution.REFINE_TOL)
+    if loose.any():
         warnings.warn(
-            f"resolution: {int(capped.sum())} points stopped refining at MAX_DEPTH; estimated "
-            f"relative error up to {err[capped].max():.1e} (resolution_report gives it per point)",
+            f"resolution: {int(loose.sum())} points above the refinement tolerance "
+            f"({int(capped.sum())} stopped at MAX_DEPTH); estimated relative error up to "
+            f"{err[loose].max():.1e} (resolution_report gives it per point)",
             RuntimeWarning,
             stacklevel=4,
         )
