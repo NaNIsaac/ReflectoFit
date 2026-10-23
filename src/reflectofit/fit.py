@@ -291,6 +291,179 @@ def staged(
     )
 
 
+LOG_SIGMA_BOUNDS = (-8.0, 1.0)
+"""Bounds of ln σ, the spread of the log10 residuals in the log likelihood (as ReflectoLearn)."""
+TAU_FACTOR = 50
+"""Kept steps per integrated autocorrelation time for a usable estimate."""
+
+
+@dataclass
+class MCMCResult:
+    names: list[str]
+    samples: NDArray
+    """Kept samples (N, P), the model's parameters in order (ln σ not included)."""
+    intervals: dict[str, tuple[float, float, float]]
+    """16th, 50th and 84th percentile of every parameter (and of `log_sigma` for the log loss)."""
+    tau: dict[str, float]
+    """Integrated autocorrelation time of every parameter over the kept half, in steps."""
+    tau_margin: float
+    """Kept steps / largest τ."""
+    converged: bool
+    steps: int
+    walkers: int
+    acceptance: float
+    log_prob_max: float
+    best: dict[str, float]
+    settings: dict = field(default_factory=dict)
+
+
+def mcmc(
+    model: Model,
+    curve: Curve,
+    start: FitResult | None = None,
+    loss: str = "poisson",
+    counts_scale: float | None = None,
+    steps: int = 5000,
+    max_steps: int = 20000,
+    walkers: int = 64,
+    seed: int = 0,
+    mask=None,
+    n_independent: int | None = None,
+) -> MCMCResult:
+    """Posterior sampling with emcee (extra `mcmc`), flat priors within the model's bounds.
+
+    Coordinates are whitened by the start fit's covariance (θ = θ_start + L z, L its Cholesky
+    factor), and the walkers move by differential evolution (0.8 DEMove, 0.2 DESnookerMove), which
+    mixes in correlated posteriors where the stretch move does not (ReflectoLearn#29, R2c). The
+    first half of the chain is discarded. While the kept half is shorter than TAU_FACTOR times the
+    largest integrated autocorrelation time, the chain is extended, up to `max_steps`; if it is still
+    short, `converged` is False and a RuntimeWarning says so.
+
+    `loss` "poisson" is the likelihood of counts (needs counts_scale); "log" is a Gaussian in log10
+    R with one fitted spread ln σ, scaled to `n_independent` points if given (as ReflectoLearn's
+    refine.mcmc).
+    """
+    import warnings
+
+    import emcee
+
+    if not model.free:
+        raise ValueError("the model has no free parameters")
+    if loss not in ("poisson", "log"):
+        raise ValueError(f"loss must be 'poisson' or 'log', got {loss!r}")
+    start_model = start.model if start is not None else model
+    q, resid = _setup(start_model, curve, loss, counts_scale, mask)
+    n = q.size
+    lo, hi = start_model.bounds
+    theta0 = start_model.start()
+    p = theta0.size
+    cov = start.covariance if start is not None else None
+    try:
+        chol = np.linalg.cholesky(cov) if cov is not None else None
+    except np.linalg.LinAlgError:
+        chol = None
+    if chol is None:
+        chol = np.diag(1e-2 * (hi - lo))
+    log_like = loss == "log"
+    weight = n_independent / n if n_independent else 1.0
+
+    def to_theta(z):
+        return theta0 + z[:, :p] @ chol.T
+
+    def log_prob(z):
+        z = np.atleast_2d(z)
+        theta = to_theta(z)
+        out = np.full(z.shape[0], -np.inf)
+        ok = np.all((theta >= lo) & (theta <= hi), axis=1)
+        if log_like:
+            ok &= (z[:, p] > LOG_SIGMA_BOUNDS[0]) & (z[:, p] < LOG_SIGMA_BOUNDS[1])
+        if ok.any():
+            sq = np.sum(resid(theta[ok]) ** 2, axis=1)
+            if log_like:
+                s = np.exp(z[ok, p])
+                out[ok] = weight * (-0.5 * sq / s**2 - n * np.log(s))
+            else:
+                out[ok] = -0.5 * sq
+        return out
+
+    ndim = p + log_like
+    walkers = max(walkers, 2 * ndim + 2)
+    rng = np.random.default_rng(seed)
+    z0 = np.zeros((walkers, ndim))
+    z0[:, :p] = 0.1 * rng.standard_normal((walkers, p))
+    theta = np.clip(to_theta(z0), lo + 1e-9 * (hi - lo), hi - 1e-9 * (hi - lo))
+    z0[:, :p] = np.linalg.solve(chol, (theta - theta0).T).T
+    if log_like:
+        rms = np.sqrt(np.sum(resid(theta0[None])[0] ** 2) / max(n, 1))
+        z0[:, p] = np.clip(np.log(max(rms, 1e-4)), *LOG_SIGMA_BOUNDS) + 0.01 * rng.standard_normal(
+            walkers
+        )
+
+    sampler = emcee.EnsembleSampler(
+        walkers,
+        ndim,
+        log_prob,
+        vectorize=True,
+        moves=[(emcee.moves.DEMove(), 0.8), (emcee.moves.DESnookerMove(), 0.2)],
+    )
+    sampler.random_state = np.random.RandomState(seed).get_state()
+    state = sampler.run_mcmc(z0, steps, progress=False)
+    total = steps
+
+    def theta_chain():
+        chain = sampler.get_chain(discard=total // 2)  # (S, W, ndim)
+        th = theta0 + chain[..., :p] @ chol.T
+        return np.concatenate([th, chain[..., p:]], axis=-1)
+
+    while True:
+        chain = theta_chain()
+        tau = emcee.autocorr.integrated_time(chain, quiet=True)
+        kept = total - total // 2
+        margin = float(kept / np.max(tau))
+        if margin >= TAU_FACTOR or total >= max_steps:
+            break
+        more = min(total, max_steps - total)
+        state = sampler.run_mcmc(state, more, progress=False)
+        total += more
+    converged = margin >= TAU_FACTOR
+    if not converged:
+        warnings.warn(
+            f"mcmc: {kept} kept steps < {TAU_FACTOR} x the largest integrated autocorrelation time "
+            f"({np.max(tau):.0f}); the intervals are not converged, run a longer chain",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    flat = chain.reshape(-1, ndim)
+    names = list(start_model.names)
+    labels = [*names, "log_sigma"] if log_like else names
+    lp = sampler.get_log_prob(discard=total // 2, flat=True)
+    best = flat[int(np.argmax(lp))]
+    return MCMCResult(
+        names=names,
+        samples=flat[:, :p],
+        intervals={
+            k: tuple(float(v) for v in np.percentile(flat[:, i], [16, 50, 84]))
+            for i, k in enumerate(labels)
+        },
+        tau=dict(zip(labels, map(float, tau), strict=True)),
+        tau_margin=margin,
+        converged=converged,
+        steps=total,
+        walkers=walkers,
+        acceptance=float(np.mean(sampler.acceptance_fraction)),
+        log_prob_max=float(lp.max()),
+        best=dict(zip(names, map(float, best[:p]), strict=True)),
+        settings={
+            "loss": loss,
+            "counts_scale": counts_scale,
+            "seed": seed,
+            "max_steps": max_steps,
+            "n_independent": n_independent,
+            "whitened": cov is not None,
+        },
+    )
+
+
 def score(model: Model, curve: Curve, counts_scale: float | None = None, mask=None) -> dict:
     """Every loss kind that the data allow, and AIC/BIC with the model's free-parameter count."""
     out = {}
