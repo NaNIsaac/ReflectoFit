@@ -14,7 +14,7 @@ from numpy.typing import ArrayLike, NDArray
 from scipy.special import erf
 
 from reflectofit import resolution
-from reflectofit.kernel import parratt
+from reflectofit.kernel import parratt, smear
 from reflectofit.structure import as_batch
 from reflectofit.units import CU_KALPHA1, CU_KALPHA2
 
@@ -100,6 +100,8 @@ def _active(x) -> bool:
 
 ROWS_PER_BLOCK = 256
 """Curves per block of the resolution integral (bounds the flat node arrays)."""
+NODES_PER_CALL = 2_000_000
+"""Padded resolution nodes per kernel call (bounds the memory of a block)."""
 
 
 def _at_angles(ops, kernel, x, packed, inst: Instrument):
@@ -127,21 +129,58 @@ def _point_smear(ops, kernel, q_true, sigma, packed, inst: Instrument):
     qt, sg = _numpy(q_true)[..., 0], _numpy(sigma)[..., 0]
     sld, thickness = _numpy(packed[0]), _numpy(packed[1])
     ka2 = inst.kalpha2_wavelength / inst.wavelength if _active(inst.kalpha2_ratio) else None
-    layouts = []
-    for i in range(b):
-        qc, width = resolution.edges(sld[i], ka2)
-        counts = resolution.point_nodes(qt[i], sg[i], float(thickness[i, 1:-1].sum()), qc, width)
-        layouts.append(resolution.layout(counts))
-    m = max(o.size for o, _, _ in layouts)
-    # padding nodes sit on point 0 with weight 0, so a curve's result does not depend on its batch
-    owner = np.stack([np.pad(o, (0, m - o.size)) for o, _, _ in layouts])
-    u = np.stack([np.pad(x, (0, m - x.size)) for _, x, _ in layouts])
-    w = np.stack([np.pad(x, (0, m - x.size)) for _, _, x in layouts])
-    nodes = ops.take_rows(q_true[..., 0], owner) + ops.take_rows(
-        sigma[..., 0], owner
-    ) * ops.asarray(u)
-    r = _at_angles(ops, kernel, nodes, packed, inst)
-    return ops.sum_rows(r * ops.asarray(w), owner, nq)
+    curves = [resolution.edges(sld[i], thickness[i], ka2) for i in range(b)]
+    counts, u_all, w_all = resolution.layout(qt, sg, curves)
+    if ops is _NumpyOps:
+        # one fused numba loop over the points and their nodes (no padding, no temporaries)
+        footprint = inst.sample_length is not None and inst.beam_sigma is not None
+        nan = np.full(b, np.nan)
+        return smear(
+            qt,
+            sg,
+            counts,
+            u_all,
+            w_all,
+            *packed,
+            inst.wavelength,
+            inst.kalpha2_wavelength if ka2 is not None else 0.0,
+            ops.column(inst.kalpha2_ratio, b).ravel(),
+            ops.column(inst.sample_length, b).ravel() if footprint else nan,
+            ops.column(inst.beam_sigma, b).ravel() if footprint else nan,
+        )
+    # per curve: owner point of each node, its u and weight
+    ends = np.cumsum(counts.reshape(b, nq).sum(axis=1))
+    layouts = [
+        (np.repeat(np.arange(nq), c), x, y)
+        for c, x, y in zip(
+            counts.reshape(b, nq),
+            np.split(u_all, ends[:-1]),
+            np.split(w_all, ends[:-1]),
+            strict=True,
+        )
+    ]
+    sizes = [o.size for o, _, _ in layouts]
+    out = []
+    start = 0
+    while start < b:
+        # curves in one kernel call while the padded node array stays within NODES_PER_CALL
+        stop, m = start + 1, sizes[start]
+        while stop < b and max(m, sizes[stop]) * (stop + 1 - start) <= NODES_PER_CALL:
+            m = max(m, sizes[stop])
+            stop += 1
+        rows = slice(start, stop)
+        part = layouts[rows]
+        # padding nodes sit on point 0 with weight 0, so a curve's result does not depend on its batch
+        owner = np.stack([np.pad(o, (0, m - o.size)) for o, _, _ in part])
+        u = np.stack([np.pad(x, (0, m - x.size)) for _, x, _ in part])
+        w = np.stack([np.pad(x, (0, m - x.size)) for _, _, x in part])
+        nodes = ops.take_rows(q_true[rows, :, 0], owner) + ops.take_rows(
+            sigma[rows, :, 0], owner
+        ) * ops.asarray(u)
+        r = _at_angles(ops, kernel, nodes, tuple(a[rows] for a in packed), _rows(inst, rows, b))
+        out.append(ops.sum_rows(r * ops.asarray(w), owner, nq))
+        start = stop
+    return ops.cat(out) if len(out) > 1 else out[0]
 
 
 def _observed(ops, kernel, q, b, packed, inst: Instrument):

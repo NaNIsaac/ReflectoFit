@@ -44,7 +44,7 @@ CASES = {
         0.0,
     ),
     # the final review (ReflectoFit#4): resonances between the edges are narrower than one edge
-    # width, and a real-SLD substrate sets the narrowest width to EDGE_FLOOR
+    # width; on a real-SLD substrate the edge is a bare square-root kink (ReflectoFit#6)
     "Ni/C/Ni waveguide, sigma 1e-4": (
         Stack([Layer(NI, 100, 2), Layer(18 + 0.02j, 800, 2)], Layer(NI, roughness=2)),
         1e-4,
@@ -70,7 +70,7 @@ def test_default_resolution_rule_converges(name):
     ("name", "constant", "loose"),
     [
         ("Ni/C/Ni waveguide, sigma 1e-4", "RESONANCE", 2.0),
-        ("PS-like on real Si, sigma 1e-4", "EDGE_FLOOR", 1e-5),
+        ("PS-like on real Si, sigma 1e-4", "SPLIT_AT_EDGES", False),
     ],
 )
 def test_the_waveguide_cases_fail_with_a_looser_constant(monkeypatch, name, constant, loose):
