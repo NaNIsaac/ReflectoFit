@@ -1,5 +1,10 @@
-"""The resolution layout is the one of the registered rule (75c7b1c), bit for bit: a faster
-implementation must not change a node (docs/design-bench/x1e/golden.py wrote the reference)."""
+"""The resolution layout is the one of the registered rule (75c7b1c): a faster implementation must
+not change a node (docs/design-bench/x1e/golden.py wrote the reference on Windows).
+
+The refinement decisions, hence the node counts and the depth-limit flags, must be identical. Node
+positions and weights go through sin and exp, whose last bit differs between platform math
+libraries (the Ubuntu runners of ReflectoFit#8 differed from Windows in u and w only), so they are
+compared to 1e-13 relative; on the platform that wrote the reference they are equal bit for bit."""
 
 from pathlib import Path
 
@@ -33,16 +38,20 @@ def _cases():
 
 
 @pytest.mark.parametrize("k", range(4))
-def test_layout_is_bit_identical_to_the_registered_rule(k):
+def test_layout_is_the_registered_rule(k):
     stack, sigma, wl2 = _cases()[k]
     q = GOLDEN["q"]
     packed = tuple(a[None] for a in stack.packed())
     got = resolution.layout(q[None], np.full((1, q.size), sigma), packed, 1.5406, wl2)
-    for key, value in zip(("counts", "u", "w", "err", "capped"), got, strict=True):
-        assert np.array_equal(value, GOLDEN[f"{k}_{key}"]), key
+    counts, u, w, err, capped = got
+    assert np.array_equal(counts, GOLDEN[f"{k}_counts"])
+    assert np.array_equal(capped, GOLDEN[f"{k}_capped"])
+    # u is in units of σ and can be 0; err can be 0
+    for key, value, atol in (("u", u, 1e-14), ("w", w, 0.0), ("err", err, 1e-18)):
+        np.testing.assert_allclose(value, GOLDEN[f"{k}_{key}"], rtol=1e-13, atol=atol, err_msg=key)
 
 
 @pytest.mark.parametrize("k", range(4))
 def test_points_refined_again_give_the_same_layout(monkeypatch, k):
     monkeypatch.setattr(resolution, "LEAF_ROOM", 0)  # no leaf is kept: every refined point replays
-    test_layout_is_bit_identical_to_the_registered_rule(k)
+    test_layout_is_the_registered_rule(k)
