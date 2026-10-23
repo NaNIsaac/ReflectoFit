@@ -52,7 +52,7 @@ def _fit(args) -> int:
     data.write(out / "fitted.dat", data.Curve(curve.q, lam, meta=curve.meta), x=args.x)
     width = max(len(k) for k in res.values)
     for k, v in res.values.items():
-        print(f"{k:<{width}}  {v:.6g} ± {res.errors[k]:.2g}")
+        print(f"{k:<{width}}  {v:.6g} +/- {res.errors[k]:.2g}")
     if res.at_bound:
         print(f"on a bound (errors not meaningful): {', '.join(res.at_bound)}")
     print(f"{res.loss} objective {res.objective:.6g} over {res.n_points} points; {res.message}")
@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
             f.add_argument("--method", choices=("lsq", "de"), default="lsq")
             f.add_argument("--loss", choices=("log", "raw", "poisson", "chi2"), default="log")
             f.add_argument(
-                "--trust", type=float, default=None, help="limit each start to ±fraction"
+                "--trust", type=float, default=None, help="limit each start to +/- fraction"
             )
             f.add_argument("--max-nfev", type=int, default=200)
             f.add_argument("--seed", type=int, default=0)
