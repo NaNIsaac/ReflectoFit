@@ -27,8 +27,11 @@ EDGE_FLOOR = 1e-6
 MAX_POINT_NODES = 8001
 KINK = 0.75
 """Spacing near a critical edge, in units of that edge's width."""
-RESONANCE = 2.0
-"""Spacing between the lowest and highest critical q, in units of the narrowest edge width."""
+RESONANCE = 0.5
+"""Spacing between the lowest and highest critical q, in units of the narrowest edge width.
+
+Review (physics, ReflectoFit#2): at 2.0 a Ni/C/Ni waveguide with sigma_q = 1e-4 was off by 1.6e-3;
+the resonances there are narrower than one edge width, so the spacing is a quarter of it."""
 
 
 def edges(sld: np.ndarray, kalpha2_scale: float | None = None) -> tuple[np.ndarray, np.ndarray]:
