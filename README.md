@@ -2,6 +2,8 @@
 
 [![Tests](https://github.com/NaNIsaac/ReflectoFit/actions/workflows/ci.yml/badge.svg)](https://github.com/NaNIsaac/ReflectoFit/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+<img src="https://raw.githubusercontent.com/NaNIsaac/ReflectoFit/main/docs/media/fit.png" width="720" alt="The first run below: Poisson counts from examples/film.toml, the starting model and the fit, with normalised residuals">
+
 A fast X-ray reflectivity fitting engine and command line: layer models, an instrument model, least
 squares, differential evolution and MCMC, model selection, and fit reports.
 

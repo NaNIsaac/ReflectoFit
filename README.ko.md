@@ -2,6 +2,8 @@
 
 [![Tests](https://github.com/NaNIsaac/ReflectoFit/actions/workflows/ci.yml/badge.svg)](https://github.com/NaNIsaac/ReflectoFit/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+<img src="https://raw.githubusercontent.com/NaNIsaac/ReflectoFit/main/docs/media/fit.png" width="720" alt="아래 첫 실행: examples/film.toml의 Poisson 계수, 시작 모델과 fit, 정규화 잔차">
+
 빠른 X선 반사율(XRR) 피팅 엔진과 명령줄 도구: 층 모델, 기기 모델, 최소제곱, differential evolution과 MCMC, 모델 선택, 피팅 보고.
 
 박막의 specular XRR 곡선을 측정했고 각 층의 두께, 거칠기, 밀도를 얻고 싶은 사람을 위한 도구다. 순방향 모델은 float64 Parratt 재귀(numba 컴파일)에 Névot-Croce 거칠기, 가우시안 분해능, 빔 footprint, Cu Kα₂, 2θ offset을 더한 것이고 refnx와 1e-10 안에서 일치한다. torch backend는 같은 곡선을 gradient와 함께 준다. 짝이 되는 시뮬레이터 ReflectoSim은 이 순방향 모델 위에서 기계학습용 합성 XRR 데이터를 만든다.
