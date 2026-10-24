@@ -10,8 +10,6 @@ from reflectofit.data import block_split, read, stitch, write
 from reflectofit.estimate import critical_q, kiessig_thickness
 from reflectofit.metrics import deviance, information_criteria, loss, residuals
 
-# --- metrics -----------------------------------------------------------------------------------
-
 
 def test_poisson_residuals_square_to_the_deviance():
     rng = np.random.default_rng(1)
@@ -52,9 +50,6 @@ def test_metrics_accept_torch_tensors():
     d.backward()
     np.testing.assert_allclose(d.item(), deviance(lam.detach().numpy(), y.numpy()), rtol=1e-12)
     assert torch.isfinite(lam.grad).all()
-
-
-# --- data --------------------------------------------------------------------------------------
 
 
 def test_read_two_and_three_columns(tmp_path):
@@ -98,9 +93,6 @@ def test_block_split_keeps_low_q_and_holds_whole_blocks():
     assert np.all(train ^ held)
     idx = np.flatnonzero(held)
     assert np.count_nonzero(np.diff(idx) > 1) == 1
-
-
-# --- estimate, materials -----------------------------------------------------------------------
 
 
 def test_critical_q_finds_the_edge():
