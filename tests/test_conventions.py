@@ -19,9 +19,6 @@ def q_c(sld: float) -> float:
     return 4 * math.sqrt(math.pi * sld * 1e-6)
 
 
-# --- units -------------------------------------------------------------------------------------
-
-
 def test_tth_to_q_uses_degrees_and_angstrom():
     assert tth_to_q(1.0, 1.5406) == pytest.approx(
         4 * math.pi / 1.5406 * math.sin(math.radians(0.5))
@@ -62,9 +59,6 @@ def test_thickness_unit_sets_the_kiessig_period():
     assert np.mean(np.diff(minima)) == pytest.approx(2 * math.pi / d, rel=2e-3)
 
 
-# --- absorption sign ---------------------------------------------------------------------------
-
-
 def test_absorbing_substrate_reflects_less_than_one_below_the_edge():
     qc = q_c(SI)
     q = np.linspace(0.2 * qc, 0.95 * qc, 50)
@@ -96,9 +90,6 @@ def test_absorbing_film_damps_its_fringes():
 def test_gain_is_rejected():
     with pytest.raises(ValueError, match="imaginary"):
         forward(np.array([0.1]), Stack(layers=[Layer(45 - 1j, 100)], substrate=Layer(SI)))
-
-
-# --- layer order -------------------------------------------------------------------------------
 
 
 def test_first_layer_is_on_top():
@@ -153,9 +144,6 @@ def test_film_roughness_is_its_top_surface():
     assert (
         np.mean(np.log10(rough_top)) < np.mean(np.log10(rough_bottom)) < np.mean(np.log10(smooth))
     )
-
-
-# --- shapes ------------------------------------------------------------------------------------
 
 
 def test_batch_rows_equal_single_calls():
