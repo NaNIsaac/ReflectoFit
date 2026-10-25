@@ -2,7 +2,10 @@
   "sidebar": [
     {
       "text": "Getting Started",
-      "items": [{ "text": "Overview", "link": "index.md" }]
+      "items": [
+        { "text": "Overview", "link": "index.md" },
+        { "text": "Usage", "link": "usage.md" }
+      ]
     },
     {
       "text": "Design",
