@@ -51,6 +51,17 @@ measured curves; the simulator is a consumer that adds a data distribution. The 
 its own forward model; its tests assert that its curves equal the fitter's forward model for the same
 parameters before noise.
 
+**[decision, superseded A] The forward physics lives in ReflectoSim.** Generation is the base:
+ReflectoSim holds all the forward physics, including the differentiable torch forward, and ReflectoFit
+depends on it. The kernel, structures, units, materials, resolution integral, forward and torch
+backend moved with their tests, the golden layout file and the reference-engine comparisons (ReflectoSim
+from ReflectoFit 69c3207). ReflectoSim never imports ReflectoFit. Optimisers, MCMC, the estimators, the
+staged fit, the fit report, the metrics, the measured-file readers and stitching stay here. The
+install stays light in both directions: h5py is the ReflectoSim `hdf5` extra and torch its `torch`
+extra, which the `torch` extra of ReflectoFit forwards to. The text above and the rest of this
+document describe the design as first proposed; where it places the physics in the fitter, this
+paragraph replaces it.
+
 ### 0.3 Names
 
 Constraints from the brief: toolkit-style names (`xrrkit`, `xrrtoolkit`) are out because they read
@@ -215,7 +226,7 @@ dimension B, q dimension Q.
 ### 3.1 Fitter core (no scipy, emcee or torch import at module load)
 
 ```python
-from reflectofit import Stack, Layer, Instrument, forward, materials
+from reflectosim import Stack, Layer, Instrument, forward, materials
 
 stack = Stack.from_layers(
     ambient=0,
@@ -355,7 +366,7 @@ How each repository would switch:
 
 | Repository | Change | When |
 |---|---|---|
-| ReflectoLearn | `physics/abeles.py` → `reflectofit.forward(backend="torch")`; `data/generator.py`, `augmentations.py` → `reflectosim`; `refine/losses.py` → `reflectofit.metrics`; `refine/pipeline.py`, `mcmc.py` → `reflectofit.fit.staged`, `fit.mcmc`; `stitch.py`, `genx_fit.py` → fitter. Networks, training, predict stay. Equivalence tests: same seed, same curves | X1c |
+| ReflectoLearn | `physics/abeles.py` → `reflectosim.forward(backend="torch")`; `data/generator.py`, `augmentations.py` → `reflectosim`; `refine/losses.py` → `reflectofit.metrics`; `refine/pipeline.py`, `mcmc.py` → `reflectofit.fit.staged`, `fit.mcmc`; `stitch.py`, `genx_fit.py` → fitter. Networks, training, predict stay. Equivalence tests: same seed, same curves | X1c |
 | ReflectoLearn `research/fit-policy` (X2) | imports `metrics`, `data.block_split`, `estimate`, `priors.stack` | after X1b |
 | ReflectoExp | nothing: a competing implementation with a different approach; its experiments keep their code for reproducibility | proposal only |
 | Reflecto | its GenX fitter could become `reflectofit fit --method de` after DECISIONS #19 | proposal only |

@@ -1,6 +1,6 @@
-"""Write tests/reference/layout_golden.npz: the resolution layout of a few stacks as computed by the
+"""Write layout_golden.npz (kept in ReflectoSim as tests/reference/layout_golden.npz): the resolution layout of a few stacks as computed by the
 rule under test (75c7b1c), so that faster implementations can be checked to give the same nodes,
-bit for bit (tests/test_layout_golden.py).
+bit for bit (ReflectoSim tests/test_layout_golden.py).
 
 Usage: uv run python docs/design-bench/x1e/golden.py
 """
@@ -8,10 +8,9 @@ Usage: uv run python docs/design-bench/x1e/golden.py
 from pathlib import Path
 
 import numpy as np
+from reflectosim import Layer, Stack, resolution
 
-from reflectofit import Layer, Stack, resolution
-
-OUT = Path(__file__).parents[3] / "tests" / "reference" / "layout_golden.npz"
+OUT = Path("layout_golden.npz")
 WL, WL2 = 1.5406, 1.54439
 
 

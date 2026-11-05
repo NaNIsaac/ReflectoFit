@@ -12,10 +12,9 @@ from pathlib import Path
 
 import numpy as np
 from numpy.typing import NDArray
-
-from reflectofit import materials
-from reflectofit.forward import Instrument, forward
-from reflectofit.structure import Layer, Stack
+from reflectosim import materials
+from reflectosim.forward import Instrument, forward
+from reflectosim.structure import Layer, Stack
 
 INSTRUMENT_FIELDS = (
     "i0",

@@ -62,7 +62,7 @@ needs it.
 
 ```python
 import numpy as np
-from reflectofit import Instrument, Layer, Stack, forward, materials, tth_to_q
+from reflectosim import Instrument, Layer, Stack, forward, materials, tth_to_q
 
 stack = Stack(
     [Layer(45 + 1.5j, 240, 6, "film"), Layer(materials.sld("SiO2", 2.20), 12, 3, "oxide")],

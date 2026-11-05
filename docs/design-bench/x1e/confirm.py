@@ -12,10 +12,9 @@ import time
 from pathlib import Path
 
 import numpy as np
+from reflectosim import Instrument, Layer, Stack, forward, resolution, tth_to_q
+from reflectosim.forward import resolution_report
 from rl_distribution import WL, draw
-
-from reflectofit import Instrument, Layer, Stack, forward, resolution, tth_to_q
-from reflectofit.forward import resolution_report
 
 HERE = Path(__file__).parent
 GRID = 2 if "--grid" in sys.argv and sys.argv[sys.argv.index("--grid") + 1] == "2" else 1

@@ -4,8 +4,8 @@ import math
 
 import numpy as np
 import pytest
+from reflectosim import Instrument, Layer, Stack, forward, q_to_tth, tth_to_q
 
-from reflectofit import Instrument, Layer, Stack, forward, q_to_tth, tth_to_q
 from reflectofit.data import Curve
 from reflectofit.estimate import critical_q, kiessig_thickness
 from reflectofit.fit import lsq

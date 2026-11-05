@@ -8,10 +8,9 @@ import sys
 import time
 
 import numpy as np
+from reflectosim import Instrument, Layer, Stack, forward, resolution, tth_to_q
+from reflectosim.forward import resolution_report
 from rl_distribution import WL, draw
-
-from reflectofit import Instrument, Layer, Stack, forward, resolution, tth_to_q
-from reflectofit.forward import resolution_report
 
 
 def brute(q, packed, inst: Instrument, sigma, n=24001, chunk=100):

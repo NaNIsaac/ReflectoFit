@@ -10,15 +10,16 @@ squares, differential evolution and MCMC, model selection, and fit reports.
 It is for anyone with a measured specular XRR curve of a thin film who wants the thickness, roughness
 and density of each layer. The forward model is a float64 Parratt recursion (compiled with numba)
 with Névot-Croce roughness, Gaussian resolution, beam footprint, Cu Kα₂ and a 2θ offset; it agrees
-with refnx to 1e-10. A torch backend gives the same curves with gradients. The companion simulator,
-ReflectoSim, generates synthetic XRR data for machine learning on top of this forward model.
+with refnx to 1e-10. A torch backend gives the same curves with gradients. The forward physics
+lives in [ReflectoSim](https://github.com/NaNIsaac/ReflectoSim), which also generates synthetic XRR
+data for machine learning; ReflectoFit is the inverse problem on top of it.
 
 Status: early development. The design is in [`docs/DESIGN.md`](docs/DESIGN.md); model selection
 follows.
 
 <img src="https://raw.githubusercontent.com/NaNIsaac/ReflectoFit/main/docs/media/throughput.png" width="720" alt="Forward-model curves per second against batch size for seven engines, for one film, five layers and a 50-layer superlattice">
 
-Forward-model throughput on the benchmark machine (`docs/design-bench/throughput.json`, DESIGN.md section 5). ReflectoFit's numba backend computes about 57 000 five-layer curves per second in batches of 100 000 on CPU; hollow markers are values scaled or extrapolated from a smaller batch.
+Forward-model throughput on the benchmark machine (`docs/design-bench/throughput.json`, DESIGN.md section 5). The numba backend computes about 57 000 five-layer curves per second in batches of 100 000 on CPU; hollow markers are values scaled or extrapolated from a smaller batch.
 
 ## Install
 

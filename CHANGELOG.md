@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The forward physics (kernel, structures, units, materials, resolution integral, forward and
+  torch backend) moved to ReflectoSim, which this package now depends on; the names are no longer
+  importable from `reflectofit`. `calc --counts` draws its noise with `reflectosim.noise`.
 - Float64 Parratt kernel (numba) and a differentiable torch backend, matching refnx, the
   ReflectoLearn kernel and JAX to 1e-10.
 - Instrument model: Gaussian resolution (constant and dq/q terms), footprint, Cu Kα2, 2θ offset,

@@ -5,9 +5,8 @@ import sys
 import time
 
 import numpy as np
+from reflectosim import forward
 from rl_distribution import draw
-
-from reflectofit import forward
 
 
 def main():

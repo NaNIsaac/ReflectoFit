@@ -6,28 +6,18 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from reflectosim.grid import q_grid
+from reflectosim.noise import poisson_counts
 
 from reflectofit import __version__, data, fit, model
-from reflectofit.units import tth_to_q
-
-
-def _grid(spec: str, wavelength: float) -> np.ndarray:
-    """'tth:START:STOP:N' (degrees) or 'q:START:STOP:N' (Å⁻¹)."""
-    axis, start, stop, n = spec.split(":")
-    values = np.linspace(float(start), float(stop), int(n))
-    if axis == "tth":
-        return tth_to_q(values, wavelength)
-    if axis == "q":
-        return values
-    raise SystemExit(f"grid axis must be tth or q, got {axis!r}")
 
 
 def _calc(args) -> int:
     m = model.load(args.model)
-    q = _grid(args.grid, m.instrument.wavelength)
+    q = q_grid(args.grid, m.instrument.wavelength)
     r = m.curves(q, m.start())[0]
     y = (
-        np.random.default_rng(args.seed).poisson(args.counts * r).astype(float)
+        poisson_counts(r[None, :], args.counts, np.random.default_rng(args.seed))[0]
         if args.counts
         else r
     )
