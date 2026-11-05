@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 - 2026-11-06
 
 - The forward physics (kernel, structures, units, materials, resolution integral, forward and
   torch backend) moved to ReflectoSim, which this package now depends on; the names are no longer
