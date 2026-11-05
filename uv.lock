@@ -438,8 +438,8 @@ dev = [
 requires-dist = [
     { name = "emcee", marker = "extra == 'mcmc'", specifier = ">=3.1" },
     { name = "numpy", specifier = ">=2.0" },
-    { name = "reflectosim", git = "https://github.com/NaNIsaac/ReflectoSim?rev=d84344ee43b2845611a391d1830fd9a24923973d" },
-    { name = "reflectosim", extras = ["torch"], marker = "extra == 'torch'", git = "https://github.com/NaNIsaac/ReflectoSim?rev=d84344ee43b2845611a391d1830fd9a24923973d" },
+    { name = "reflectosim", git = "https://github.com/NaNIsaac/ReflectoSim?rev=1cdc16e0036752e3f745511e6d97f391defae167" },
+    { name = "reflectosim", extras = ["torch"], marker = "extra == 'torch'", git = "https://github.com/NaNIsaac/ReflectoSim?rev=1cdc16e0036752e3f745511e6d97f391defae167" },
     { name = "scipy", specifier = ">=1.13" },
 ]
 provides-extras = ["torch", "mcmc"]
@@ -454,7 +454,7 @@ dev = [
 [[package]]
 name = "reflectosim"
 version = "0.1.0.dev0"
-source = { git = "https://github.com/NaNIsaac/ReflectoSim?rev=d84344ee43b2845611a391d1830fd9a24923973d#d84344ee43b2845611a391d1830fd9a24923973d" }
+source = { git = "https://github.com/NaNIsaac/ReflectoSim?rev=1cdc16e0036752e3f745511e6d97f391defae167#1cdc16e0036752e3f745511e6d97f391defae167" }
 dependencies = [
     { name = "numba" },
     { name = "numpy" },

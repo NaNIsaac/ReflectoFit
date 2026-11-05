@@ -54,7 +54,7 @@ explicit = true
 # reflectosim is not on PyPI yet: pinned to a commit until its first release.
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
-reflectosim = { git = "https://github.com/NaNIsaac/ReflectoSim", rev = "d84344ee43b2845611a391d1830fd9a24923973d" }
+reflectosim = { git = "https://github.com/NaNIsaac/ReflectoSim", rev = "1cdc16e0036752e3f745511e6d97f391defae167" }
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13"]
