@@ -33,8 +33,8 @@ import math
 
 import numpy as np
 import pytest
-
 from reflectosim import Instrument, Layer, Stack, tth_to_q
+
 from reflectofit.data import Curve
 from reflectofit.fit import _ensemble, lsq, mcmc
 from reflectofit.model import Model

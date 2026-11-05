@@ -8,7 +8,6 @@ Usage: uv run python docs/design-bench/x1e/golden.py
 from pathlib import Path
 
 import numpy as np
-
 from reflectosim import Layer, Stack, resolution
 
 OUT = Path("layout_golden.npz")

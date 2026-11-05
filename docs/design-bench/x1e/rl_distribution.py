@@ -3,7 +3,6 @@ with numpy: one film on a real-SLD substrate, an oxide on top with probability 0
 σ_q per curve."""
 
 import numpy as np
-
 from reflectosim import Instrument, tth_to_q
 
 WL = 1.54

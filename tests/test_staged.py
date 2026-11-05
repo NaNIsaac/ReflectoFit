@@ -21,8 +21,8 @@ import math
 
 import numpy as np
 import pytest
-
 from reflectosim import Instrument, Layer, Stack, forward, tth_to_q
+
 from reflectofit.data import Curve
 from reflectofit.fit import staged as fit_staged
 from reflectofit.model import Model
