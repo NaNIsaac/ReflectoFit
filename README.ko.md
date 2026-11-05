@@ -12,7 +12,15 @@
 
 ## 설치
 
-아직 PyPI에 없다. clone한 뒤 [uv](https://docs.astral.sh/uv/)로:
+```sh
+pip install reflectofit
+```
+
+순방향 물리를 담은 [ReflectoSim](https://github.com/NaNIsaac/ReflectoSim)이 함께 설치된다. 선택 extra:
+`reflectofit[torch]`는 미분 가능한 torch forward를, `reflectofit[mcmc]`는 샘플러용 emcee를 더한다. 쓰지
+않으면 torch와 emcee는 설치되지 않는다.
+
+패키지를 고치거나 아래 예제를 돌리려면 clone한 뒤 [uv](https://docs.astral.sh/uv/)로:
 
 ```sh
 git clone https://github.com/NaNIsaac/ReflectoFit

@@ -23,7 +23,16 @@ Forward-model throughput on the benchmark machine (`docs/design-bench/throughput
 
 ## Install
 
-Not on PyPI yet. From a clone, with [uv](https://docs.astral.sh/uv/):
+<!-- test -->
+```sh
+pip install reflectofit
+```
+
+This also installs [ReflectoSim](https://github.com/NaNIsaac/ReflectoSim), which holds the forward
+physics. Optional extras: `reflectofit[torch]` adds the differentiable torch forward and
+`reflectofit[mcmc]` adds emcee for the sampler. Without them neither torch nor emcee is installed.
+
+To work on the package, or to run the examples below, clone it and use [uv](https://docs.astral.sh/uv/):
 
 ```sh
 git clone https://github.com/NaNIsaac/ReflectoFit
