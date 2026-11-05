@@ -9,8 +9,7 @@ from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
-
-from reflectofit.units import CU_KALPHA1, q_to_tth, tth_to_q
+from reflectosim.units import CU_KALPHA1, q_to_tth, tth_to_q
 
 
 @dataclass

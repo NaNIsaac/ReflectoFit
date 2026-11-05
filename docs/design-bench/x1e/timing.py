@@ -7,7 +7,7 @@ import time
 import numpy as np
 from rl_distribution import draw
 
-from reflectofit import forward
+from reflectosim import forward
 
 
 def main():

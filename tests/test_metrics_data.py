@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from reflectofit import Layer, Stack, forward, materials, tth_to_q
+from reflectosim import Layer, Stack, forward, materials, tth_to_q
 from reflectofit.data import block_split, read, stitch, write
 from reflectofit.estimate import critical_q, kiessig_thickness
 from reflectofit.metrics import deviance, information_criteria, loss, residuals

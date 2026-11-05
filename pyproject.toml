@@ -21,13 +21,12 @@ classifiers = [
 requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.0",
-    "numba>=0.61",
     "scipy>=1.13",
-    "periodictable>=2.1.0",
+    "reflectosim",
 ]
 
 [project.optional-dependencies]
-torch = ["torch>=2.5"]
+torch = ["reflectosim[torch]"]
 mcmc = ["emcee>=3.1"]
 
 [project.scripts]
@@ -42,8 +41,6 @@ Changelog = "https://github.com/NaNIsaac/ReflectoFit/blob/main/CHANGELOG.md"
 [dependency-groups]
 dev = [
     "pytest>=8.0",
-    "refnx>=0.1.60",
-    "jax>=0.4.30",
     "torch>=2.5",
     "emcee>=3.1",
 ]
@@ -54,8 +51,10 @@ name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
+# reflectosim is not on PyPI yet: pinned to a commit until its first release.
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
+reflectosim = { git = "https://github.com/NaNIsaac/ReflectoSim", rev = "d2f2119ddc9118c9c8c28acde7fadae8f1aff539" }
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13"]
@@ -63,12 +62,9 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
-# verbatim copies of other engines, compared against in tests/test_reference_engines.py
-extend-exclude = ["tests/reference/reflectolearn_abeles.py"]
 
 [tool.ruff.lint]
 extend-select = ["B", "I", "UP"]

@@ -252,7 +252,7 @@ class StagedFit:
 def model_simulate(model, q) -> Simulate:
     """A `simulate` for a `reflectofit.model.Model`: values keyed by the model's parameter names
     (see `Model`), forward model on the torch backend in the dtype of the values."""
-    from reflectofit.forward import forward
+    from reflectosim.forward import forward
     from reflectofit.model import INSTRUMENT_FIELDS
 
     sld0, thickness0, roughness0 = model.stack.packed()

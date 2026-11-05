@@ -4,7 +4,7 @@ with numpy: one film on a real-SLD substrate, an oxide on top with probability 0
 
 import numpy as np
 
-from reflectofit import Instrument, tth_to_q
+from reflectosim import Instrument, tth_to_q
 
 WL = 1.54
 KALPHA2 = 1.54439
