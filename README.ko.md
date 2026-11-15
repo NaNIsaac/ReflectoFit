@@ -1,5 +1,7 @@
 # ReflectoFit
 
+[English](README.md)
+
 [![Tests](https://github.com/NaNIsaac/ReflectoFit/actions/workflows/ci.yml/badge.svg)](https://github.com/NaNIsaac/ReflectoFit/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 <img src="https://raw.githubusercontent.com/NaNIsaac/ReflectoFit/main/docs/media/fit.png" width="720" alt="아래 첫 실행: examples/film.toml의 Poisson 계수, 시작 모델과 fit, 정규화 잔차">
@@ -39,6 +41,11 @@ uv run reflectofit fit film.dat --model examples/film_start.toml --loss poisson 
 ```
 
 피팅은 자유 파라미터마다 값과 표준오차를 출력하고 `fit/result.json`, `fit/model.toml`(피팅된 모델, 다음 시작값으로 재사용 가능), `fit/fitted.dat`를 쓴다.
+
+## 문서
+
+- [docs/usage.md](docs/usage.md): 모델 파일, 모든 명령, Python API를 더 자세히.
+- [docs/DESIGN.md](docs/DESIGN.md): 설계, API, 엔진 선택과 위 그림 뒤의 순방향 모델 벤치마크(`docs/design-bench/throughput.json`).
 
 ## 모델
 
@@ -95,7 +102,7 @@ log10_background = [-10.0, -5.0]
 
 ```python
 import numpy as np
-from reflectofit import Instrument, Layer, Stack, forward, materials, tth_to_q
+from reflectosim import Instrument, Layer, Stack, forward, materials, tth_to_q
 
 stack = Stack(
     [Layer(45 + 1.5j, 240, 6, "film"), Layer(materials.sld("SiO2", 2.20), 12, 3, "oxide")],
